@@ -76,6 +76,17 @@
       border: 1px solid rgba(27,42,58,.9);
       color: var(--text);
     }
+    .linkBox{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size: 12px;
+      color: rgba(232,240,248,.7);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 520px;
+    }
+    .linkBox a{ color: rgba(0,210,190,.9); text-decoration: none; }
+    .linkBox a:hover{ text-decoration: underline; }
   </style>
 </head>
 
@@ -83,10 +94,10 @@
   <div class="container my-4">
     <div class="panel p-3 p-lg-4">
 
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-2">
         <div>
           <div class="brand">www.oqliv.com</div>
-          <h4 class="mb-0">Candles + Volume (D / W / M)</h4>
+          <h4 class="mb-0">Candles (D / W / M)</h4>
         </div>
 
         <div class="d-flex gap-2 align-items-center">
@@ -95,7 +106,14 @@
         </div>
       </div>
 
-      <div id="status" class="muted small mb-3"></div>
+      <!-- Shareable link (ticker in querystring) -->
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div id="status" class="muted small"></div>
+        <div class="linkBox">
+          Link:
+          <a id="shareLink" href="#" target="_blank" rel="noopener">—</a>
+        </div>
+      </div>
 
       <div class="row g-3">
 
@@ -152,6 +170,29 @@
     const $ = (id) => document.getElementById(id);
 
     function setStatus(msg){ $("status").textContent = msg || ""; }
+
+    // ---- URL querystring helpers (so OpenClaw can link: /yourpage?ticker=NVDA)
+    function getQueryTicker() {
+      const sp = new URLSearchParams(window.location.search);
+      const t = (sp.get("ticker") || "").trim().toUpperCase();
+      return t || null;
+    }
+
+    function setQueryTicker(ticker) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("ticker", (ticker || "").trim().toUpperCase());
+      // keep user on the same page, but update the address bar
+      window.history.replaceState({}, "", url.toString());
+      updateShareLink(ticker);
+    }
+
+    function updateShareLink(ticker){
+      const url = new URL(window.location.href);
+      url.searchParams.set("ticker", (ticker || "").trim().toUpperCase());
+      const a = $("shareLink");
+      a.href = url.toString();
+      a.textContent = url.toString();
+    }
 
     function buildUrl(ticker, tf){
       const t = encodeURIComponent((ticker || "").trim().toUpperCase());
@@ -213,25 +254,6 @@
         .filter(Boolean);
     }
 
-    function parseVolumes(payload, candlesParsed){
-      const fromCandles = candlesParsed
-        .filter(c => c.volume != null && Number.isFinite(c.volume))
-        .map(c => ({ time: c.time, value: c.volume }));
-
-      if (fromCandles.length) return fromCandles;
-
-      const alt = payload?.volumes || payload?.volume || payload?.bars_volume || null;
-      if (Array.isArray(alt) && alt.length) {
-        const out = [];
-        for (let i = 0; i < Math.min(alt.length, candlesParsed.length); i++) {
-          const v = num(alt[i]);
-          if (Number.isFinite(v)) out.push({ time: candlesParsed[i].time, value: v });
-        }
-        if (out.length) return out;
-      }
-      return [];
-    }
-
     // ---- pivots-now -> candlestick markers (NO value needed)
     function parsePivotMarkersForCandleSeries(payload, candlesParsed){
       const peaks = payload?.signals?.peak_now || [];
@@ -265,7 +287,6 @@
         });
       }
 
-      // sort ascending by time (required)
       markers.sort((a,b) => a.time - b.time);
       return markers;
     }
@@ -287,62 +308,62 @@
       charts[tf] = null;
     }
 
-    function createCandleVolumeChart(containerId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = "";
+    // Volume is OFF here (no histogram series). Markers still work.
+    function createCandleChart(containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
 
-  const chart = LightweightCharts.createChart(container, {
-    width: container.clientWidth,
-    height: 360,
-    layout: {
-      background: { type: "solid", color: "rgba(12,18,27,.95)" },
-      textColor: "rgba(232,240,248,.85)"
-    },
-    grid: {
-      vertLines: { color: "rgba(27,42,58,.6)" },
-      horzLines: { color: "rgba(27,42,58,.6)" }
-    },
-    rightPriceScale: { borderColor: "rgba(27,42,58,.9)" },
-    timeScale: { borderColor: "rgba(27,42,58,.9)", timeVisible: true },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
-  });
+      const chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
+        height: 360,
+        layout: {
+          background: { type: "solid", color: "rgba(12,18,27,.95)" },
+          textColor: "rgba(232,240,248,.85)"
+        },
+        grid: {
+          vertLines: { color: "rgba(27,42,58,.6)" },
+          horzLines: { color: "rgba(27,42,58,.6)" }
+        },
+        rightPriceScale: { borderColor: "rgba(27,42,58,.9)" },
+        timeScale: { borderColor: "rgba(27,42,58,.9)", timeVisible: true },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+      });
 
-  const candleSeries = chart.addCandlestickSeries({
-    upColor: "rgba(45,224,122,.95)",
-    downColor: "rgba(255,77,79,.95)",
-    borderUpColor: "rgba(45,224,122,.95)",
-    borderDownColor: "rgba(255,77,79,.95)",
-    wickUpColor: "rgba(45,224,122,.95)",
-    wickDownColor: "rgba(255,77,79,.95)"
-  });
+      const candleSeries = chart.addCandlestickSeries({
+        upColor: "rgba(45,224,122,.95)",
+        downColor: "rgba(255,77,79,.95)",
+        borderUpColor: "rgba(45,224,122,.95)",
+        borderDownColor: "rgba(255,77,79,.95)",
+        wickUpColor: "rgba(45,224,122,.95)",
+        wickDownColor: "rgba(255,77,79,.95)"
+      });
 
-  function setData(candles, _volsIgnored, markers) {
-    candleSeries.setData(candles);
-    candleSeries.setMarkers(Array.isArray(markers) ? markers : []);
-    chart.timeScale().fitContent();
-  }
+      function setData(candles, markers) {
+        candleSeries.setData(candles);
+        candleSeries.setMarkers(Array.isArray(markers) ? markers : []);
+        chart.timeScale().fitContent();
+      }
 
-  function resize() {
-    chart.applyOptions({ width: container.clientWidth, watermark: { visible: false } });
-  }
+      function resize() {
+        chart.applyOptions({ width: container.clientWidth, watermark: { visible: false } });
+      }
 
-  const onResize = () => resize();
-  window.addEventListener("resize", onResize);
+      const onResize = () => resize();
+      window.addEventListener("resize", onResize);
 
-  chart._destroy = () => {
-    window.removeEventListener("resize", onResize);
-    chart.remove();
-  };
+      chart._destroy = () => {
+        window.removeEventListener("resize", onResize);
+        chart.remove();
+      };
 
-  return { chart, setData, _destroy: chart._destroy };
-}
+      return { chart, setData, _destroy: chart._destroy };
+    }
 
     async function loadTF(ticker, tf, containerId, metaId){
       const url = buildUrl(ticker, tf);
       const payload = await fetchJSON(url);
 
       const candlesParsed = parseCandles(payload);
-      const volsParsed = parseVolumes(payload, candlesParsed);
 
       let markers = [];
       if (tf === "d") {
@@ -352,45 +373,52 @@
       setMeta(metaId, payload, candlesParsed.length);
 
       destroyChart(tf);
-      const inst = createCandleVolumeChart(containerId);
+      const inst = createCandleChart(containerId);
       inst.setData(
         candlesParsed.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })),
-        volsParsed,
         markers
       );
       charts[tf] = inst;
-
-      return { tf, volume: !!volsParsed.length };
     }
 
-    async function loadAll(){
-      const ticker = $("tickerInput").value.trim().toUpperCase() || "SPY";
+    async function loadAll(tickerOverride){
+      const ticker = (tickerOverride || $("tickerInput").value || "").trim().toUpperCase() || "SPY";
       $("tickerInput").value = ticker;
+
+      // Update querystring + shareable link
+      setQueryTicker(ticker);
+
       setStatus(`Loading ${ticker} (d/w/m) ...`);
 
       try{
-        const results = await Promise.all([
+        await Promise.all([
           loadTF(ticker, "d", "chartD", "metaD"),
           loadTF(ticker, "w", "chartW", "metaW"),
           loadTF(ticker, "m", "chartM", "metaM"),
         ]);
 
-        const missingVol = results.filter(r => !r.volume).map(r => r.tf.toUpperCase());
-        if (missingVol.length) {
-          setStatus(`Loaded ${ticker}. Volume not found for: ${missingVol.join(", ")} (candles still shown).`);
-        } else {
-          setStatus(`Loaded ${ticker}.`);
-        }
+        setStatus(`Loaded ${ticker}.`);
       } catch(e){
         console.error(e);
         setStatus(`Error: ${e.message}`);
       }
     }
 
-    $("loadBtn").addEventListener("click", loadAll);
+    $("loadBtn").addEventListener("click", () => loadAll());
     $("tickerInput").addEventListener("keydown", (e) => { if (e.key === "Enter") loadAll(); });
 
-    loadAll();
+    // Auto-load:
+    // 1) if URL has ?ticker=NVDA use it
+    // 2) else use input default
+    const qt = getQueryTicker();
+    if (qt) {
+      $("tickerInput").value = qt;
+      updateShareLink(qt);
+      loadAll(qt);
+    } else {
+      updateShareLink($("tickerInput").value.trim().toUpperCase() || "SPY");
+      loadAll();
+    }
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

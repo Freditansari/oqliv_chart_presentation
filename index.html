@@ -6,8 +6,6 @@
   <title>OQLIV — Multi-TF Candles</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- Lightweight Charts (TradingView) -->
   <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
 
   <style>
@@ -88,8 +86,7 @@
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
         <div>
           <div class="brand">www.oqliv.com</div>
-          <h4 class="mb-0">Candles + Volume (M / W / D)</h4>
-          
+          <h4 class="mb-0">Candles + Volume (D / W / M)</h4>
         </div>
 
         <div class="d-flex gap-2 align-items-center">
@@ -101,19 +98,22 @@
       <div id="status" class="muted small mb-3"></div>
 
       <div class="row g-3">
+
+        <!-- DAILY (TOP) — pivots-now -->
         <div class="col-12">
           <div class="card-dark p-3">
             <div class="d-flex justify-content-between align-items-baseline mb-2">
-              <div><b>Monthly</b> <span class="muted">(tf=m)</span></div>
-              <div class="metaLine" id="metaM">—</div>
+              <div><b>Daily</b> <span class="muted">(tf=d) — pivots-now</span></div>
+              <div class="metaLine" id="metaD">—</div>
             </div>
             <div class="chartWrap">
-              <div id="chartM"></div>
+              <div id="chartD"></div>
               <div class="watermark">www.oqliv.com</div>
             </div>
           </div>
         </div>
 
+        <!-- WEEKLY — pattern-scan -->
         <div class="col-12">
           <div class="card-dark p-3">
             <div class="d-flex justify-content-between align-items-baseline mb-2">
@@ -127,256 +127,269 @@
           </div>
         </div>
 
+        <!-- MONTHLY — pattern-scan -->
         <div class="col-12">
           <div class="card-dark p-3">
             <div class="d-flex justify-content-between align-items-baseline mb-2">
-              <div><b>Daily</b> <span class="muted">(tf=d)</span></div>
-              <div class="metaLine" id="metaD">—</div>
+              <div><b>Monthly</b> <span class="muted">(tf=m)</span></div>
+              <div class="metaLine" id="metaM">—</div>
             </div>
             <div class="chartWrap">
-              <div id="chartD"></div>
+              <div id="chartM"></div>
               <div class="watermark">www.oqliv.com</div>
             </div>
           </div>
         </div>
+
       </div>
 
     </div>
   </div>
 
   <script>
-    // If your HTML is hosted on the SAME domain (oqliv.com) keep API_BASE = ""
-    // If testing locally, set API_BASE = "https://oqliv.com"
+    // If hosted on same domain, can be "".
     const API_BASE = "https://oqliv.com";
-
     const $ = (id) => document.getElementById(id);
 
-    function setStatus(msg) { $("status").textContent = msg || ""; }
+    function setStatus(msg){ $("status").textContent = msg || ""; }
 
-    function buildUrl(ticker, tf) {
+    function buildUrl(ticker, tf){
       const t = encodeURIComponent((ticker || "").trim().toUpperCase());
       const f = encodeURIComponent(tf);
+
+      if (tf === "d") {
+        const left = 5;
+        const eps = 0;
+        return `${API_BASE}/performance/api/json/pivots-now?ticker=${t}&tf=${f}&left=${left}&eps=${eps}`;
+      }
       return `${API_BASE}/performance/api/json/pattern-scan?ticker=${t}&tf=${f}`;
     }
 
-    async function fetchJSON(url) {
+    async function fetchJSON(url){
       const res = await fetch(url, { cache: "no-store" });
       const text = await res.text();
       let data;
-      try { data = JSON.parse(text); } catch (e) {
+      try { data = JSON.parse(text); }
+      catch {
         throw new Error(`Bad JSON from endpoint. First 200 chars: ${text.slice(0,200)}`);
       }
-      if (!res.ok) {
-        throw new Error(data?.error || `HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       return data;
     }
 
-    // ---- Parsing: candles and volume (no python changes required)
-    function parseCandles(payload) {
+    function toUTCTimestamp(dateLike){
+      const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
+      const t = Math.floor(d.getTime() / 1000);
+      return Number.isFinite(t) ? t : NaN;
+    }
+
+    function num(x){
+      const n = Number(x);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    // ---- candles (null-safe)
+    function parseCandles(payload){
       const arr = payload?.candles || payload?.ohlc || payload?.bars || [];
-      // expected: [{t,o,h,l,c, v?}]
       return (arr || [])
         .filter(x => x && (x.t || x.time))
         .map(x => {
           const t = x.t || x.time;
           const time = toUTCTimestamp(t);
-          return {
-            time,
-            open: num(x.o ?? x.open),
-            high: num(x.h ?? x.high),
-            low:  num(x.l ?? x.low),
-            close:num(x.c ?? x.close),
-            volume: (x.v ?? x.volume ?? null) != null ? num(x.v ?? x.volume) : null
-          };
+          if (!Number.isFinite(time)) return null;
+
+          const open  = num(x.o ?? x.open ?? x.Open);
+          const high  = num(x.h ?? x.high ?? x.High);
+          const low   = num(x.l ?? x.low  ?? x.Low);
+          const close = num(x.c ?? x.close?? x.Close);
+
+          if (![open,high,low,close].every(Number.isFinite)) return null;
+
+          const vRaw = (x.v ?? x.volume ?? x.Volume ?? null);
+          const volume = (vRaw != null) ? num(vRaw) : null;
+
+          return { time, open, high, low, close, volume: Number.isFinite(volume) ? volume : null };
         })
-        .filter(x => isFinite(x.open) && isFinite(x.high) && isFinite(x.low) && isFinite(x.close));
+        .filter(Boolean);
     }
 
-    function parseVolumes(payload, candlesParsed) {
-      // Priority:
-      // 1) candle.volume if present
-      // 2) payload.volumes / payload.volume / payload.bars_volume arrays (if any)
+    function parseVolumes(payload, candlesParsed){
       const fromCandles = candlesParsed
-        .filter(c => c.volume != null && isFinite(c.volume))
+        .filter(c => c.volume != null && Number.isFinite(c.volume))
         .map(c => ({ time: c.time, value: c.volume }));
 
       if (fromCandles.length) return fromCandles;
 
       const alt = payload?.volumes || payload?.volume || payload?.bars_volume || null;
       if (Array.isArray(alt) && alt.length) {
-        // Try to map by index to candle timestamps
         const out = [];
         for (let i = 0; i < Math.min(alt.length, candlesParsed.length); i++) {
           const v = num(alt[i]);
-          if (isFinite(v)) out.push({ time: candlesParsed[i].time, value: v });
+          if (Number.isFinite(v)) out.push({ time: candlesParsed[i].time, value: v });
         }
         if (out.length) return out;
       }
-
-      return []; // no volume available
+      return [];
     }
 
-    function toUTCTimestamp(dateLike) {
-      // Accept "YYYY-MM-DD", ISO strings, or Date.
-      // Lightweight charts wants "UTCTimestamp" (seconds).
-      const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
-      return Math.floor(d.getTime() / 1000);
+    // ---- pivots-now -> candlestick markers (NO value needed)
+    function parsePivotMarkersForCandleSeries(payload, candlesParsed){
+      const peaks = payload?.signals?.peak_now || [];
+      const valleys = payload?.signals?.valley_now || [];
+
+      const idxToTime = (i) => (candlesParsed[i] ? candlesParsed[i].time : null);
+
+      const markers = [];
+
+      for (const p of peaks) {
+        const time = idxToTime(p.i);
+        if (!Number.isFinite(time)) continue;
+        markers.push({
+          time,
+          position: "aboveBar",
+          shape: "arrowDown",
+          color: "rgba(255,77,79,.95)",
+          text: "Peak"
+        });
+      }
+
+      for (const v of valleys) {
+        const time = idxToTime(v.i);
+        if (!Number.isFinite(time)) continue;
+        markers.push({
+          time,
+          position: "belowBar",
+          shape: "arrowUp",
+          color: "rgba(45,224,122,.95)",
+          text: "Valley"
+        });
+      }
+
+      // sort ascending by time (required)
+      markers.sort((a,b) => a.time - b.time);
+      return markers;
     }
 
-    function num(x) {
-      const n = Number(x);
-      return isFinite(n) ? n : NaN;
-    }
-
-    function setMeta(metaId, payload, candlesLen) {
+    function setMeta(metaId, payload, candlesLen){
       const asof = payload?.asof || payload?.asof_utc || "—";
-      const last = payload?.last_price;
+      const last = payload?.last_price ?? payload?.last?.c ?? null;
       const bars = payload?.bars ?? candlesLen ?? "—";
-      $(metaId).textContent = `asof: ${asof}  |  bars: ${bars}  |  last: ${isFinite(last) ? last.toFixed(2) : "—"}`;
+      $(metaId).textContent =
+        `asof: ${asof}  |  bars: ${bars}  |  last: ${Number.isFinite(Number(last)) ? Number(last).toFixed(2) : "—"}`;
     }
 
-    // ---- Chart instances
-    const charts = {
-      m: null,
-      w: null,
-      d: null
-    };
+    // ---- chart instances
+    const charts = { m:null, w:null, d:null };
 
-    function destroyChart(tf) {
+    function destroyChart(tf){
       const c = charts[tf];
       if (c && c._destroy) c._destroy();
       charts[tf] = null;
     }
 
     function createCandleVolumeChart(containerId) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = "";
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
 
-      const chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: 360,
-        layout: {
-          background: { type: "solid", color: "rgba(12,18,27,.95)" },
-          textColor: "rgba(232,240,248,.85)"
-        },
-        grid: {
-          vertLines: { color: "rgba(27,42,58,.6)" },
-          horzLines: { color: "rgba(27,42,58,.6)" }
-        },
-        rightPriceScale: {
-          borderColor: "rgba(27,42,58,.9)"
-        },
-        timeScale: {
-          borderColor: "rgba(27,42,58,.9)",
-          timeVisible: true
-        },
-        crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
-      });
+  const chart = LightweightCharts.createChart(container, {
+    width: container.clientWidth,
+    height: 360,
+    layout: {
+      background: { type: "solid", color: "rgba(12,18,27,.95)" },
+      textColor: "rgba(232,240,248,.85)"
+    },
+    grid: {
+      vertLines: { color: "rgba(27,42,58,.6)" },
+      horzLines: { color: "rgba(27,42,58,.6)" }
+    },
+    rightPriceScale: { borderColor: "rgba(27,42,58,.9)" },
+    timeScale: { borderColor: "rgba(27,42,58,.9)", timeVisible: true },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+  });
 
-      const candleSeries = chart.addCandlestickSeries({
-        upColor: "rgba(45,224,122,.95)",
-        downColor: "rgba(255,77,79,.95)",
-        borderUpColor: "rgba(45,224,122,.95)",
-        borderDownColor: "rgba(255,77,79,.95)",
-        wickUpColor: "rgba(45,224,122,.95)",
-        wickDownColor: "rgba(255,77,79,.95)"
-      });
+  const candleSeries = chart.addCandlestickSeries({
+    upColor: "rgba(45,224,122,.95)",
+    downColor: "rgba(255,77,79,.95)",
+    borderUpColor: "rgba(45,224,122,.95)",
+    borderDownColor: "rgba(255,77,79,.95)",
+    wickUpColor: "rgba(45,224,122,.95)",
+    wickDownColor: "rgba(255,77,79,.95)"
+  });
 
-      const volSeries = chart.addHistogramSeries({
-        priceFormat: { type: "volume" },
-        priceScaleId: "",
-        scaleMargins: { top: 0.75, bottom: 0 }
-      });
+  function setData(candles, _volsIgnored, markers) {
+    candleSeries.setData(candles);
+    candleSeries.setMarkers(Array.isArray(markers) ? markers : []);
+    chart.timeScale().fitContent();
+  }
 
-      function setData(candles, vols) {
-        candleSeries.setData(candles);
-        if (vols && vols.length) {
-          // Color volume by candle direction
-          const volColored = vols.map((v, i) => {
-            const c = candles[i];
-            const up = c && c.close >= c.open;
-            return { time: v.time, value: v.value, color: up ? "rgba(45,224,122,.35)" : "rgba(255,77,79,.35)" };
-          });
-          volSeries.setData(volColored);
-        } else {
-          volSeries.setData([]);
-        }
-        chart.timeScale().fitContent();
-      }
+  function resize() {
+    chart.applyOptions({ width: container.clientWidth, watermark: { visible: false } });
+  }
 
-      function resize() {
-        chart.applyOptions({ width: container.clientWidth,watermark:{visible: false} });
-      }
+  const onResize = () => resize();
+  window.addEventListener("resize", onResize);
 
-      const onResize = () => resize();
-      window.addEventListener("resize", onResize);
+  chart._destroy = () => {
+    window.removeEventListener("resize", onResize);
+    chart.remove();
+  };
 
-      // small helper so we can cleanup properly
-      chart._destroy = () => {
-        window.removeEventListener("resize", onResize);
-        chart.remove();
-      };
+  return { chart, setData, _destroy: chart._destroy };
+}
 
-      return { chart, setData, _destroy: chart._destroy };
-    }
-
-    async function loadTF(ticker, tf, containerId, metaId) {
+    async function loadTF(ticker, tf, containerId, metaId){
       const url = buildUrl(ticker, tf);
       const payload = await fetchJSON(url);
 
       const candlesParsed = parseCandles(payload);
       const volsParsed = parseVolumes(payload, candlesParsed);
 
+      let markers = [];
+      if (tf === "d") {
+        markers = parsePivotMarkersForCandleSeries(payload, candlesParsed);
+      }
+
       setMeta(metaId, payload, candlesParsed.length);
 
-      // Create / reuse chart
       destroyChart(tf);
       const inst = createCandleVolumeChart(containerId);
       inst.setData(
         candlesParsed.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })),
-        volsParsed
+        volsParsed,
+        markers
       );
       charts[tf] = inst;
 
-      // If no volume, show subtle note in status (once)
-      if (!volsParsed.length) {
-        return { tf, volume: false };
-      }
-      return { tf, volume: true };
+      return { tf, volume: !!volsParsed.length };
     }
 
-    async function loadAll() {
+    async function loadAll(){
       const ticker = $("tickerInput").value.trim().toUpperCase() || "SPY";
       $("tickerInput").value = ticker;
+      setStatus(`Loading ${ticker} (d/w/m) ...`);
 
-      setStatus(`Loading ${ticker} (m/w/d) ...`);
-
-      try {
+      try{
         const results = await Promise.all([
-          loadTF(ticker, "m", "chartM", "metaM"),
-          loadTF(ticker, "w", "chartW", "metaW"),
           loadTF(ticker, "d", "chartD", "metaD"),
+          loadTF(ticker, "w", "chartW", "metaW"),
+          loadTF(ticker, "m", "chartM", "metaM"),
         ]);
 
         const missingVol = results.filter(r => !r.volume).map(r => r.tf.toUpperCase());
         if (missingVol.length) {
-          setStatus(`Loaded ${ticker}. Volume not found in payload for: ${missingVol.join(", ")} (candles still shown).`);
+          setStatus(`Loaded ${ticker}. Volume not found for: ${missingVol.join(", ")} (candles still shown).`);
         } else {
           setStatus(`Loaded ${ticker}.`);
         }
-      } catch (e) {
+      } catch(e){
         console.error(e);
         setStatus(`Error: ${e.message}`);
       }
     }
 
     $("loadBtn").addEventListener("click", loadAll);
-    $("tickerInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") loadAll();
-    });
+    $("tickerInput").addEventListener("keydown", (e) => { if (e.key === "Enter") loadAll(); });
 
-    // Auto-load on open
     loadAll();
   </script>
 

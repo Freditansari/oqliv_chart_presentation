@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>OQLIV — Multi-TF Candles</title>
+  <title>OQLIV — Daily pivots-now</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
@@ -16,52 +16,28 @@
       --border:#1b2a3a;
       --text:#e8f0f8;
       --muted:#8ea2b6;
-      --accent:#00d2be;
     }
     body{
       background: radial-gradient(1200px 700px at 15% 10%, rgba(0,210,190,.08), transparent 60%),
                   radial-gradient(900px 600px at 80% 20%, rgba(58,160,255,.06), transparent 55%),
                   var(--bg);
       color: var(--text);
+      margin:0;
     }
-    .panel{
-      background: linear-gradient(180deg, rgba(0,210,190,.06), transparent 35%), var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    .topbar{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+      background: rgba(11,15,20,.65);
+      border-bottom: 1px solid rgba(27,42,58,.7);
     }
-    .card-dark{
-      background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 45%), var(--card);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      box-shadow: 0 8px 20px rgba(0,0,0,.25);
-    }
-    .muted{ color: var(--muted); }
     .brand{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
       color: rgba(232,240,248,.7);
       font-size: .85rem;
     }
-    .chartWrap{
-      position: relative;
-      height: 360px;
-      width: 100%;
-    }
-    .watermark{
-      position:absolute;
-      right:10px;
-      bottom:8px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-      font-size: 12px;
-      color: rgba(232,240,248,.55);
-      pointer-events:none;
-      user-select:none;
-    }
-    .metaLine{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-      font-size: 12px;
-      color: rgba(232,240,248,.65);
-    }
+    .muted{ color: var(--muted); }
     .btn-primary{
       background: rgba(0,210,190,.18);
       border-color: rgba(0,210,190,.35);
@@ -76,134 +52,95 @@
       border: 1px solid rgba(27,42,58,.9);
       color: var(--text);
     }
-    .linkBox{
+
+    /* full-page chart area */
+    .wrap{
+      height: calc(100vh - 64px);
+      padding: 12px;
+    }
+    .panel{
+      height: 100%;
+      background: linear-gradient(180deg, rgba(0,210,190,.06), transparent 35%), rgba(15,22,32,.9);
+      border: 1px solid rgba(27,42,58,.9);
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* two panes: price + small volume */
+    #chartPrice{ height: 88%; }
+    #chartVol  { height: 12%; border-top: 1px solid rgba(27,42,58,.6); }
+
+    .floatBrand{
+      position: absolute;
+      right: 12px;
+      bottom: 10px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
       font-size: 12px;
-      color: rgba(232,240,248,.7);
+      color: rgba(232,240,248,.50);
+      pointer-events:none;
+      user-select:none;
+    }
+    .statusline{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size: 12px;
+      color: rgba(232,240,248,.65);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 520px;
     }
-    .linkBox a{ color: rgba(0,210,190,.9); text-decoration: none; }
-    .linkBox a:hover{ text-decoration: underline; }
   </style>
 </head>
 
 <body class="text-light" data-bs-theme="dark">
-  <div class="container my-4">
-    <div class="panel p-3 p-lg-4">
 
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-2">
-        <div>
-          <div class="brand">www.oqliv.com</div>
-          <h4 class="mb-0">Technical Analysis</h4>
-        </div>
-
-        <div class="d-flex gap-2 align-items-center">
-          <input id="tickerInput" class="form-control form-control-sm text-uppercase" style="width:120px" value="SPY" />
-          <button id="loadBtn" class="btn btn-sm btn-primary">Load</button>
-        </div>
+  <div class="topbar">
+    <div class="container-fluid px-3 py-2 d-flex align-items-center justify-content-between gap-3">
+      <div>
+        <div class="brand">www.oqliv.com</div>
+        <div class="fw-semibold">Technical Analysis</div>
       </div>
 
-      <!-- Shareable link (ticker in querystring) -->
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-        <div id="status" class="muted small"></div>
-        <div class="linkBox">
-          Link:
-          <a id="shareLink" href="#" target="_blank" rel="noopener">—</a>
-        </div>
+      <div class="d-flex align-items-center gap-2">
+        <input id="tickerInput" class="form-control form-control-sm text-uppercase" style="width:120px" value="SPY" />
+        <button id="loadBtn" class="btn btn-sm btn-primary">Load</button>
       </div>
 
-      <div class="row g-3">
+      <div id="meta" class="statusline">—</div>
+    </div>
+    <div class="container-fluid px-3 pb-2">
+      <div id="status" class="muted small">—</div>
+    </div>
+  </div>
 
-        <!-- DAILY (TOP) — pivots-now -->
-        <div class="col-12">
-          <div class="card-dark p-3">
-            <div class="d-flex justify-content-between align-items-baseline mb-2">
-              <div><b>Daily</b> <span class="muted">(tf=d) — pivots-now</span></div>
-              <div class="metaLine" id="metaD">—</div>
-            </div>
-            <div class="chartWrap">
-              <div id="chartD"></div>
-              <div class="watermark">www.oqliv.com</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- WEEKLY — pattern-scan -->
-        <div class="col-12">
-          <div class="card-dark p-3">
-            <div class="d-flex justify-content-between align-items-baseline mb-2">
-              <div><b>Weekly</b> <span class="muted">(tf=w)</span></div>
-              <div class="metaLine" id="metaW">—</div>
-            </div>
-            <div class="chartWrap">
-              <div id="chartW"></div>
-              <div class="watermark">www.oqliv.com</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- MONTHLY — pattern-scan -->
-        <div class="col-12">
-          <div class="card-dark p-3">
-            <div class="d-flex justify-content-between align-items-baseline mb-2">
-              <div><b>Monthly</b> <span class="muted">(tf=m)</span></div>
-              <div class="metaLine" id="metaM">—</div>
-            </div>
-            <div class="chartWrap">
-              <div id="chartM"></div>
-              <div class="watermark">www.oqliv.com</div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
+  <div class="wrap">
+    <div class="panel">
+      <div id="chartPrice"></div>
+      <div id="chartVol"></div>
+      <div class="floatBrand">www.oqliv.com</div>
     </div>
   </div>
 
   <script>
-    // If hosted on same domain, can be "".
     const API_BASE = "https://oqliv.com";
     const $ = (id) => document.getElementById(id);
 
     function setStatus(msg){ $("status").textContent = msg || ""; }
+    function setMeta(msg){ $("meta").textContent = msg || "—"; }
 
-    // ---- URL querystring helpers (so OpenClaw can link: /yourpage?ticker=NVDA)
-    function getQueryTicker() {
-      const sp = new URLSearchParams(window.location.search);
-      const t = (sp.get("ticker") || "").trim().toUpperCase();
-      return t || null;
+    function toUTCTimestamp(dateLike){
+      const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
+      const t = Math.floor(d.getTime() / 1000);
+      return Number.isFinite(t) ? t : NaN;
     }
+    function num(x){ const n = Number(x); return Number.isFinite(n) ? n : NaN; }
 
-    function setQueryTicker(ticker) {
-      const url = new URL(window.location.href);
-      url.searchParams.set("ticker", (ticker || "").trim().toUpperCase());
-      // keep user on the same page, but update the address bar
-      window.history.replaceState({}, "", url.toString());
-      updateShareLink(ticker);
-    }
-
-    function updateShareLink(ticker){
-      const url = new URL(window.location.href);
-      url.searchParams.set("ticker", (ticker || "").trim().toUpperCase());
-      const a = $("shareLink");
-      a.href = url.toString();
-      a.textContent = url.toString();
-    }
-
-    function buildUrl(ticker, tf){
+    function buildUrl(ticker){
       const t = encodeURIComponent((ticker || "").trim().toUpperCase());
-      const f = encodeURIComponent(tf);
-
-      if (tf === "d") {
-        const left = 5;
-        const eps = 0;
-        return `${API_BASE}/performance/api/json/pivots-now?ticker=${t}&tf=${f}&left=${left}&eps=${eps}`;
-      }
-      return `${API_BASE}/performance/api/json/pattern-scan?ticker=${t}&tf=${f}`;
+      const left = 5;
+      const eps = 0;
+      return `${API_BASE}/performance/api/json/pivots-now?ticker=${t}&tf=d&left=${left}&eps=${eps}`;
     }
 
     async function fetchJSON(url){
@@ -211,214 +148,188 @@
       const text = await res.text();
       let data;
       try { data = JSON.parse(text); }
-      catch {
-        throw new Error(`Bad JSON from endpoint. First 200 chars: ${text.slice(0,200)}`);
-      }
+      catch { throw new Error(`Bad JSON. First 200 chars: ${text.slice(0,200)}`); }
       if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
       return data;
     }
 
-    function toUTCTimestamp(dateLike){
-      const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
-      const t = Math.floor(d.getTime() / 1000);
-      return Number.isFinite(t) ? t : NaN;
-    }
-
-    function num(x){
-      const n = Number(x);
-      return Number.isFinite(n) ? n : NaN;
-    }
-
-    // ---- candles (null-safe)
     function parseCandles(payload){
       const arr = payload?.candles || payload?.ohlc || payload?.bars || [];
       return (arr || [])
         .filter(x => x && (x.t || x.time))
         .map(x => {
-          const t = x.t || x.time;
-          const time = toUTCTimestamp(t);
+          const time = toUTCTimestamp(x.t || x.time);
           if (!Number.isFinite(time)) return null;
 
           const open  = num(x.o ?? x.open ?? x.Open);
           const high  = num(x.h ?? x.high ?? x.High);
           const low   = num(x.l ?? x.low  ?? x.Low);
           const close = num(x.c ?? x.close?? x.Close);
-
           if (![open,high,low,close].every(Number.isFinite)) return null;
 
           const vRaw = (x.v ?? x.volume ?? x.Volume ?? null);
-          const volume = (vRaw != null) ? num(vRaw) : null;
+          const volume = (vRaw != null) ? num(vRaw) : NaN;
 
           return { time, open, high, low, close, volume: Number.isFinite(volume) ? volume : null };
         })
         .filter(Boolean);
     }
 
-    // ---- pivots-now -> candlestick markers (NO value needed)
-    function parsePivotMarkersForCandleSeries(payload, candlesParsed){
+    function buildVolumeBars(candles){
+  // Shift volume LEFT by 1 bar: use previous candle's time
+  return candles
+    .filter(c => c.volume != null && Number.isFinite(c.volume))
+    .map((c, i) => {
+      const t = (i > 0) ? candles[i ].time : candles[0].time; // <-- shift 1 bar left
+      return {
+        time: t,
+        value: c.volume,
+        color: (c.close >= c.open) ? "rgba(45,224,122,.14)" : "rgba(255,77,79,.14)",
+      };
+    });
+}
+
+    function parsePivotMarkers(payload, candles){
       const peaks = payload?.signals?.peak_now || [];
       const valleys = payload?.signals?.valley_now || [];
 
-      const idxToTime = (i) => (candlesParsed[i] ? candlesParsed[i].time : null);
-
+      const idxToTime = (i) => (candles[i] ? candles[i].time : null);
       const markers = [];
 
       for (const p of peaks) {
         const time = idxToTime(p.i);
         if (!Number.isFinite(time)) continue;
-        markers.push({
-          time,
-          position: "aboveBar",
-          shape: "arrowDown",
-          color: "rgba(255,77,79,.95)",
-          text: "Peak"
-        });
+        markers.push({ time, position:"aboveBar", shape:"arrowDown", color:"rgba(255,77,79,.95)", text:"Peak" });
       }
-
       for (const v of valleys) {
         const time = idxToTime(v.i);
         if (!Number.isFinite(time)) continue;
-        markers.push({
-          time,
-          position: "belowBar",
-          shape: "arrowUp",
-          color: "rgba(45,224,122,.95)",
-          text: "Valley"
-        });
+        markers.push({ time, position:"belowBar", shape:"arrowUp", color:"rgba(45,224,122,.95)", text:"Valley" });
       }
-
       markers.sort((a,b) => a.time - b.time);
       return markers;
     }
 
-    function setMeta(metaId, payload, candlesLen){
-      const asof = payload?.asof || payload?.asof_utc || "—";
-      const last = payload?.last_price ?? payload?.last?.c ?? null;
-      const bars = payload?.bars ?? candlesLen ?? "—";
-      $(metaId).textContent =
-        `asof: ${asof}  |  bars: ${bars}  |  last: ${Number.isFinite(Number(last)) ? Number(last).toFixed(2) : "—"}`;
+    // ---- Charts: separate price pane + volume pane
+    let priceChart, volChart, candleSeries, volSeries;
+
+    function destroyCharts(){
+      if (priceChart) priceChart.remove();
+      if (volChart) volChart.remove();
+      priceChart = volChart = candleSeries = volSeries = null;
     }
 
-    // ---- chart instances
-    const charts = { m:null, w:null, d:null };
+    function createCharts(){
+      destroyCharts();
 
-    function destroyChart(tf){
-      const c = charts[tf];
-      if (c && c._destroy) c._destroy();
-      charts[tf] = null;
-    }
+      const priceEl = $("chartPrice");
+      const volEl = $("chartVol");
 
-    // Volume is OFF here (no histogram series). Markers still work.
-    function createCandleChart(containerId) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = "";
-
-      const chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
-        height: 360,
-        layout: {
-          background: { type: "solid", color: "rgba(12,18,27,.95)" },
-          textColor: "rgba(232,240,248,.85)"
-        },
-        grid: {
-          vertLines: { color: "rgba(27,42,58,.6)" },
-          horzLines: { color: "rgba(27,42,58,.6)" }
-        },
-        rightPriceScale: { borderColor: "rgba(27,42,58,.9)" },
-        timeScale: { borderColor: "rgba(27,42,58,.9)", timeVisible: true },
+      priceChart = LightweightCharts.createChart(priceEl, {
+        width: priceEl.clientWidth,
+        height: priceEl.clientHeight,
+        layout: { background: { type:"solid", color:"rgba(12,18,27,.95)" }, textColor:"rgba(232,240,248,.85)" },
+        grid: { vertLines:{ color:"rgba(27,42,58,.6)" }, horzLines:{ color:"rgba(27,42,58,.6)" } },
+        rightPriceScale: { borderColor:"rgba(27,42,58,.9)" },
+        timeScale: { borderColor:"rgba(27,42,58,.9)", timeVisible:true },
         crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
       });
 
-      const candleSeries = chart.addCandlestickSeries({
-        upColor: "rgba(45,224,122,.95)",
-        downColor: "rgba(255,77,79,.95)",
-        borderUpColor: "rgba(45,224,122,.95)",
-        borderDownColor: "rgba(255,77,79,.95)",
-        wickUpColor: "rgba(45,224,122,.95)",
-        wickDownColor: "rgba(255,77,79,.95)"
+      volChart = LightweightCharts.createChart(volEl, {
+        width: volEl.clientWidth,
+        height: volEl.clientHeight,
+        layout: { background: { type:"solid", color:"rgba(12,18,27,.95)" }, textColor:"rgba(232,240,248,.0)" },
+        grid: { vertLines:{ color:"rgba(27,42,58,.45)" }, horzLines:{ color:"rgba(27,42,58,.45)" } },
+        rightPriceScale: { borderColor:"rgba(27,42,58,.9)" },
+        timeScale: { borderColor:"rgba(27,42,58,.9)", timeVisible:true }
       });
 
-      function setData(candles, markers) {
-        candleSeries.setData(candles);
-        candleSeries.setMarkers(Array.isArray(markers) ? markers : []);
-        chart.timeScale().fitContent();
-      }
+      // hide vol labels
+      volChart.priceScale("right").applyOptions({ visible: false });
 
-      function resize() {
-        chart.applyOptions({ width: container.clientWidth, watermark: { visible: false } });
-      }
+      candleSeries = priceChart.addCandlestickSeries({
+        upColor:"rgba(45,224,122,.95)",
+        downColor:"rgba(255,77,79,.95)",
+        borderUpColor:"rgba(45,224,122,.95)",
+        borderDownColor:"rgba(255,77,79,.95)",
+        wickUpColor:"rgba(45,224,122,.95)",
+        wickDownColor:"rgba(255,77,79,.95)"
+      });
 
-      const onResize = () => resize();
+      volSeries = volChart.addHistogramSeries({
+        priceFormat: { type: "volume" },
+        priceScaleId: "",                 // separate scale
+        scaleMargins: { top: 0.92, bottom: 0.00 }
+      });
+
+      // sync crosshair + time range (simple: sync visible range)
+      const sync = () => {
+        const r = priceChart.timeScale().getVisibleLogicalRange();
+        if (r) volChart.timeScale().setVisibleLogicalRange(r);
+      };
+      priceChart.timeScale().subscribeVisibleLogicalRangeChange(sync);
+
+      const onResize = () => {
+        priceChart.applyOptions({ width: priceEl.clientWidth, height: priceEl.clientHeight });
+        volChart.applyOptions({ width: volEl.clientWidth, height: volEl.clientHeight });
+        sync();
+      };
       window.addEventListener("resize", onResize);
 
-      chart._destroy = () => {
-        window.removeEventListener("resize", onResize);
-        chart.remove();
-      };
-
-      return { chart, setData, _destroy: chart._destroy };
+      // stash for cleanup
+      createCharts._cleanup = () => window.removeEventListener("resize", onResize);
     }
 
-    async function loadTF(ticker, tf, containerId, metaId){
-      const url = buildUrl(ticker, tf);
-      const payload = await fetchJSON(url);
-
-      const candlesParsed = parseCandles(payload);
-
-      let markers = [];
-      if (tf === "d") {
-        markers = parsePivotMarkersForCandleSeries(payload, candlesParsed);
-      }
-
-      setMeta(metaId, payload, candlesParsed.length);
-
-      destroyChart(tf);
-      const inst = createCandleChart(containerId);
-      inst.setData(
-        candlesParsed.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })),
-        markers
-      );
-      charts[tf] = inst;
-    }
-
-    async function loadAll(tickerOverride){
-      const ticker = (tickerOverride || $("tickerInput").value || "").trim().toUpperCase() || "SPY";
+    async function load(){
+      const ticker = ($("tickerInput").value || "SPY").trim().toUpperCase();
       $("tickerInput").value = ticker;
 
-      // Update querystring + shareable link
-      setQueryTicker(ticker);
+      setStatus(`Loading ${ticker}...`);
+      setMeta("—");
 
-      setStatus(`Loading ${ticker} (d/w/m) ...`);
+      if (!priceChart) createCharts();
 
       try{
-        await Promise.all([
-          loadTF(ticker, "d", "chartD", "metaD"),
-          loadTF(ticker, "w", "chartW", "metaW"),
-          loadTF(ticker, "m", "chartM", "metaM"),
-        ]);
+        const payload = await fetchJSON(buildUrl(ticker));
+        const candles = parseCandles(payload);
 
-        setStatus(`Loaded ${ticker}.`);
+        if (!candles.length) throw new Error("No candle data returned.");
+
+        const markers = parsePivotMarkers(payload, candles);
+        const volBars = buildVolumeBars(candles);
+
+        candleSeries.setData(candles.map(c => ({ time:c.time, open:c.open, high:c.high, low:c.low, close:c.close })));
+        candleSeries.setMarkers(markers);
+
+        volSeries.setData(volBars);
+
+        priceChart.timeScale().fitContent();
+        volChart.timeScale().fitContent();
+
+        const asof = payload?.asof || payload?.asof_utc || "—";
+        const last = payload?.last_price ?? payload?.last?.c ?? null;
+        const bars = payload?.bars ?? candles.length ?? "—";
+        setMeta(`asof: ${asof} | bars: ${bars} | last: ${Number.isFinite(Number(last)) ? Number(last).toFixed(2) : "—"}`);
+
+        const lastIdx = candles.length - 1;
+        const lastIsPeak = (payload?.signals?.peak_now || []).some(x => x?.i === lastIdx);
+        const lastIsValley = (payload?.signals?.valley_now || []).some(x => x?.i === lastIdx);
+
+        if (lastIsPeak) setStatus(`Loaded ${ticker}. Peak forming on last bar.`);
+        else if (lastIsValley) setStatus(`Loaded ${ticker}. Valley forming on last bar.`);
+        else setStatus(`Loaded ${ticker}. No pivot forming on last bar.`);
+
       } catch(e){
         console.error(e);
         setStatus(`Error: ${e.message}`);
       }
     }
 
-    $("loadBtn").addEventListener("click", () => loadAll());
-    $("tickerInput").addEventListener("keydown", (e) => { if (e.key === "Enter") loadAll(); });
+    $("loadBtn").addEventListener("click", load);
+    $("tickerInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") load(); });
 
-    // Auto-load:
-    // 1) if URL has ?ticker=NVDA use it
-    // 2) else use input default
-    const qt = getQueryTicker();
-    if (qt) {
-      $("tickerInput").value = qt;
-      updateShareLink(qt);
-      loadAll(qt);
-    } else {
-      updateShareLink($("tickerInput").value.trim().toUpperCase() || "SPY");
-      loadAll();
-    }
+    // auto-load
+    load();
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

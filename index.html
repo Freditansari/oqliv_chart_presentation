@@ -126,6 +126,24 @@
     const API_BASE = "https://oqliv.com";
     const $ = (id) => document.getElementById(id);
 
+    // ---- URL query helpers (?ticker=QQQ or ?t=QQQ)
+    function getTickerFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const raw = (params.get("ticker") || params.get("t") || "").trim().toUpperCase();
+      const cleaned = raw.replace(/[^A-Z0-9.\-]/g, "");
+      return cleaned || null;
+    }
+
+    function setTickerQueryParam(ticker) {
+      const t = (ticker || "").trim().toUpperCase();
+      if (!t) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set("ticker", t);
+      // optional: remove short alias if present so URL stays consistent
+      url.searchParams.delete("t");
+      window.history.replaceState({}, "", url.toString());
+    }
+
     function setStatus(msg){ $("status").textContent = msg || ""; }
     function setMeta(msg){ $("meta").textContent = msg || "—"; }
 
@@ -176,18 +194,18 @@
     }
 
     function buildVolumeBars(candles){
-  // Shift volume LEFT by 1 bar: use previous candle's time
-  return candles
-    .filter(c => c.volume != null && Number.isFinite(c.volume))
-    .map((c, i) => {
-      const t = (i > 0) ? candles[i ].time : candles[0].time; // <-- shift 1 bar left
-      return {
-        time: t,
-        value: c.volume,
-        color: (c.close >= c.open) ? "rgba(45,224,122,.14)" : "rgba(255,77,79,.14)",
-      };
-    });
-}
+      // Shift volume LEFT by 1 bar: use previous candle's time
+      return candles
+        .filter(c => c.volume != null && Number.isFinite(c.volume))
+        .map((c, i) => {
+          const t = (i > 0) ? candles[i - 1].time : candles[0].time; // shifted left by 1
+          return {
+            time: t,
+            value: c.volume,
+            color: (c.close >= c.open) ? "rgba(45,224,122,.14)" : "rgba(255,77,79,.14)",
+          };
+        });
+    }
 
     function parsePivotMarkers(payload, candles){
       const peaks = payload?.signals?.peak_now || [];
@@ -214,6 +232,10 @@
     let priceChart, volChart, candleSeries, volSeries;
 
     function destroyCharts(){
+      if (createCharts._cleanup) {
+        createCharts._cleanup();
+        createCharts._cleanup = null;
+      }
       if (priceChart) priceChart.remove();
       if (volChart) volChart.remove();
       priceChart = volChart = candleSeries = volSeries = null;
@@ -262,7 +284,7 @@
         scaleMargins: { top: 0.92, bottom: 0.00 }
       });
 
-      // sync crosshair + time range (simple: sync visible range)
+      // sync visible range
       const sync = () => {
         const r = priceChart.timeScale().getVisibleLogicalRange();
         if (r) volChart.timeScale().setVisibleLogicalRange(r);
@@ -276,13 +298,16 @@
       };
       window.addEventListener("resize", onResize);
 
-      // stash for cleanup
+      // stash cleanup
       createCharts._cleanup = () => window.removeEventListener("resize", onResize);
     }
 
     async function load(){
       const ticker = ($("tickerInput").value || "SPY").trim().toUpperCase();
       $("tickerInput").value = ticker;
+
+      // keep URL shareable/bookmarkable
+      setTickerQueryParam(ticker);
 
       setStatus(`Loading ${ticker}...`);
       setMeta("—");
@@ -298,7 +323,13 @@
         const markers = parsePivotMarkers(payload, candles);
         const volBars = buildVolumeBars(candles);
 
-        candleSeries.setData(candles.map(c => ({ time:c.time, open:c.open, high:c.high, low:c.low, close:c.close })));
+        candleSeries.setData(candles.map(c => ({
+          time:c.time,
+          open:c.open,
+          high:c.high,
+          low:c.low,
+          close:c.close
+        })));
         candleSeries.setMarkers(markers);
 
         volSeries.setData(volBars);
@@ -328,7 +359,11 @@
     $("loadBtn").addEventListener("click", load);
     $("tickerInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") load(); });
 
-    // auto-load
+    // auto-load (URL query param wins)
+    const urlTicker = getTickerFromQuery();
+    if (urlTicker) {
+      $("tickerInput").value = urlTicker;
+    }
     load();
   </script>
 

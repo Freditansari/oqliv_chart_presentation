@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OQLIV — Technical Analysis Report</title>
+
+  <link rel="icon" href="https://oqliv.com/favicon.ico" />
+  <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0a;
+      --panel: #141414;
+      --panel-2: #0f0f0f;
+      --border: #1f1f1f;
+      --text: #e0e0e0;
+      --muted: #888;
+      --muted-2: #666;
+      --accent: #ff6b35;
+      --accent-2: #ff8c42;
+      --bull: #2de07a;
+      --bear: #ff4d4f;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 2rem;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      gap: 1rem;
+    }
+
+    .header-left h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .header-right {
+      text-align: right;
+      min-width: 320px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .ticker-input {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      width: 140px;
+    }
+
+    .ticker-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover { background: var(--accent-2); }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+
+    .status {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .chart-section,
+    .summary-card {
+      background: var(--panel);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chart-header,
+    .summary-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .chart-title-wrap h2,
+    .summary-header h2 {
+      font-size: 1.25rem;
+      color: #fff;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .chart-desc {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .chart-meta {
+      color: var(--muted-2);
+      font-size: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+      text-align: right;
+    }
+
+    .price-pane { height: 440px; }
+    .vol-pane { height: 100px; border-top: 1px solid var(--border); }
+
+    .float-brand {
+      position: absolute;
+      right: 12px;
+      bottom: 10px;
+      font-size: 12px;
+      color: rgba(224,224,224,0.35);
+      pointer-events: none;
+      user-select: none;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+
+    .chart-watermark {
+      position: absolute;
+      left: 18px;
+      top: 120px;
+      z-index: 8;
+      pointer-events: none;
+      user-select: none;
+      padding: 0;
+      min-width: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .chart-watermark-ticker {
+      color: rgba(170,170,170,0.42);
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+
+    .chart-watermark-brand {
+      margin-top: 5px;
+      color: rgba(170,170,170,0.34);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: lowercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+
+    .summary-body {
+      padding: 1.5rem;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .metric {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .metric-value.bull { color: var(--bull); }
+    .metric-value.bear { color: var(--bear); }
+
+    .metric-note {
+      margin-top: 0.5rem;
+      color: var(--muted-2);
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 900px) {
+      body { padding: 1rem; }
+      .header { flex-direction: column; align-items: flex-start; }
+      .header-right { text-align: left; width: 100%; min-width: 0; }
+      .controls { justify-content: flex-start; }
+      .chart-header, .summary-header { flex-direction: column; align-items: flex-start; }
+      .chart-meta { text-align: left; }
+      .summary-body { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .summary-body { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <h1 id="pageTitle">Technical Analysis Report</h1>
+        <p class="subtitle" id="pageSubtitle">Daily and monthly structure view</p>
+      </div>
+      <div class="header-right">
+        <div class="controls">
+          <input id="tickerInput" class="ticker-input" value="SPY" placeholder="Ticker" />
+          <button id="loadBtn" class="btn">Load Report</button>
+        </div>
+        <div class="status-row">
+          <div id="status" class="status">—</div>
+          <div>www.oqliv.com</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="summary-header">
+        <h2>Quick Snapshot</h2>
+        <div id="summaryMeta" class="chart-meta">—</div>
+      </div>
+      <div class="summary-body">
+        <div class="metric">
+          <div class="metric-label">Ticker</div>
+          <div class="metric-value" id="metricTicker">—</div>
+          <div class="metric-note">Current loaded symbol</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Daily Last</div>
+          <div class="metric-value" id="metricDailyLast">—</div>
+          <div class="metric-note" id="metricDailyBars">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Monthly Last</div>
+          <div class="metric-value" id="metricMonthlyLast">—</div>
+          <div class="metric-note" id="metricMonthlyBars">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Structure</div>
+          <div class="metric-value" id="metricSignal">—</div>
+          <div class="metric-note" id="metricSignalNote">Daily and monthly structure state</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="chart-title-wrap">
+            <h2>Daily Pattern Scan</h2>
+            <div class="chart-desc">Short-term structure view from the daily pattern-scan endpoint.</div>
+          </div>
+          <div class="chart-meta" id="dailyMeta">—</div>
+        </div>
+        <div class="chart-watermark"><div class="chart-watermark-ticker" id="dailyOverlayTicker">SPY</div><div class="chart-watermark-brand">www.oqliv.com</div></div>
+        <div id="dailyPrice" class="price-pane"></div>
+        <div id="dailyVol" class="vol-pane"></div>
+        <div class="float-brand">www.oqliv.com</div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="chart-title-wrap">
+            <h2>Monthly Pattern Scan</h2>
+            <div class="chart-desc">Higher timeframe structure view from the monthly pattern-scan endpoint.</div>
+          </div>
+          <div class="chart-meta" id="monthlyMeta">—</div>
+        </div>
+        <div class="chart-watermark"><div class="chart-watermark-ticker" id="monthlyOverlayTicker">SPY</div><div class="chart-watermark-brand">www.oqliv.com</div></div>
+        <div id="monthlyPrice" class="price-pane"></div>
+        <div id="monthlyVol" class="vol-pane"></div>
+        <div class="float-brand">www.oqliv.com</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://oqliv.com';
+    const $ = (id) => document.getElementById(id);
+
+    let dailyChart, dailyVolChart, dailyCandleSeries, dailyVolSeries, dailyLevelSeries;
+    let monthlyChart, monthlyVolChart, monthlyCandleSeries, monthlyVolSeries, monthlyLevelSeries;
+
+    function getTickerFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const raw = (params.get('ticker') || params.get('t') || '').trim().toUpperCase();
+      const cleaned = raw.replace(/[^A-Z0-9.\-]/g, '');
+      return cleaned || null;
+    }
+
+    function setTickerQueryParam(ticker) {
+      const t = (ticker || '').trim().toUpperCase();
+      if (!t) return;
+      const url = new URL(window.location.href);
+      url.searchParams.set('ticker', t);
+      url.searchParams.delete('t');
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    function setStatus(msg) { $('status').textContent = msg || '—'; }
+    function setMeta(id, msg) { $(id).textContent = msg || '—'; }
+
+    function toUTCTimestamp(dateLike) {
+      const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
+      const t = Math.floor(d.getTime() / 1000);
+      return Number.isFinite(t) ? t : NaN;
+    }
+
+    function num(x) {
+      const n = Number(x);
+      return Number.isFinite(n) ? n : NaN;
+    }
+
+    function fmtPrice(x) {
+      const n = num(x);
+      return Number.isFinite(n) ? '$' + n.toFixed(2) : '—';
+    }
+
+    function buildPatternScanUrl(ticker, tf) {
+      const t = encodeURIComponent((ticker || '').trim().toUpperCase());
+      if (tf === 'd') {
+        return `${API_BASE}/performance/api/json/pattern-scan?ticker=${t}&tf=d&period=1y&bars=260`;
+      }
+      return `${API_BASE}/performance/api/json/pattern-scan?ticker=${t}&tf=m&period=15y&bars=180`;
+    }
+
+    async function fetchJSON(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Bad JSON. First 200 chars: ${text.slice(0, 200)}`);
+      }
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      return data;
+    }
+
+    async function fetchPatternScan(ticker, tf) {
+      const payload = await fetchJSON(buildPatternScanUrl(ticker, tf));
+      return { payload, tf };
+    }
+
+    function parseCandles(payload) {
+      const arr = payload?.candles || payload?.ohlc || payload?.bars || [];
+      return (arr || [])
+        .filter(x => x && (x.t || x.time || x.date))
+        .map(x => {
+          const time = toUTCTimestamp(x.t || x.time || x.date);
+          if (!Number.isFinite(time)) return null;
+          const open = num(x.o ?? x.open ?? x.Open);
+          const high = num(x.h ?? x.high ?? x.High);
+          const low = num(x.l ?? x.low ?? x.Low);
+          const close = num(x.c ?? x.close ?? x.Close);
+          if (![open, high, low, close].every(Number.isFinite)) return null;
+          const vRaw = (x.v ?? x.volume ?? x.Volume ?? null);
+          const volume = (vRaw != null) ? num(vRaw) : NaN;
+          return { time, open, high, low, close, volume: Number.isFinite(volume) ? volume : null };
+        })
+        .filter(Boolean);
+    }
+
+    function buildVolumeBars(candles) {
+      return candles
+        .filter(c => c.volume != null && Number.isFinite(c.volume))
+        .map(c => ({
+          time: c.time,
+          value: c.volume,
+          color: c.close >= c.open ? 'rgba(45, 224, 122, 0.35)' : 'rgba(255, 77, 79, 0.35)'
+        }));
+    }
+
+    function patternLabel(pattern) {
+      return String(pattern || '')
+        .replace(/_/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+    }
+
+    function parsePatternMarkers(payload, candles) {
+      const patterns = Array.isArray(payload?.patterns) ? payload.patterns : [];
+      const markers = [];
+
+      for (const p of patterns) {
+        const name = String(p?.pattern || 'pattern');
+        const conf = p?.confidence ? ` (${p.confidence})` : '';
+        if (Number.isFinite(Number(p?.a)) && candles[Number(p.a)]) {
+          markers.push({
+            time: candles[Number(p.a)].time,
+            position: 'aboveBar',
+            shape: 'circle',
+            color: '#ff8c42',
+            text: `${patternLabel(name)} A${conf}`
+          });
+        }
+        if (Number.isFinite(Number(p?.b)) && candles[Number(p.b)]) {
+          markers.push({
+            time: candles[Number(p.b)].time,
+            position: 'aboveBar',
+            shape: 'circle',
+            color: '#ff8c42',
+            text: `${patternLabel(name)} B${conf}`
+          });
+        }
+        if (Number.isFinite(Number(p?.h)) && candles[Number(p.h)]) {
+          markers.push({
+            time: candles[Number(p.h)].time,
+            position: 'aboveBar',
+            shape: 'arrowDown',
+            color: '#ff4d4f',
+            text: `${patternLabel(name)} head${conf}`
+          });
+        }
+        if (Number.isFinite(Number(p?.l)) && candles[Number(p.l)]) {
+          markers.push({
+            time: candles[Number(p.l)].time,
+            position: 'belowBar',
+            shape: 'arrowUp',
+            color: '#2de07a',
+            text: `${patternLabel(name)} low${conf}`
+          });
+        }
+        if (Number.isFinite(Number(p?.r)) && candles[Number(p.r)]) {
+          markers.push({
+            time: candles[Number(p.r)].time,
+            position: 'aboveBar',
+            shape: 'circle',
+            color: '#ff8c42',
+            text: `${patternLabel(name)} R${conf}`
+          });
+        }
+      }
+      return markers.sort((a, b) => a.time - b.time);
+    }
+
+    function collectLevelLines(payload) {
+      const lines = [];
+      const pushLine = (price, color, title) => {
+        const v = num(price);
+        if (!Number.isFinite(v)) return;
+        lines.push({ price: v, color, title });
+      };
+
+      // Zones intentionally omitted to avoid compressing the chart scale.
+
+      pushLine(payload?.nearest_support?.level, 'rgba(45,224,122,0.85)', 'Support');
+      pushLine(payload?.nearest_resistance?.level, 'rgba(255,77,79,0.85)', 'Resistance');
+
+
+      const seen = new Set();
+      return lines.filter(line => {
+        const key = `${line.title}|${line.price.toFixed(4)}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function createPairedCharts(priceElId, volElId) {
+      const priceEl = $(priceElId);
+      const volEl = $(volElId);
+
+      const chart = LightweightCharts.createChart(priceEl, {
+        width: priceEl.clientWidth,
+        height: priceEl.clientHeight,
+        layout: { background: { type: 'solid', color: '#0a0a0a' }, textColor: '#e0e0e0' },
+        grid: { vertLines: { color: '#1f1f1f' }, horzLines: { color: '#1f1f1f' } },
+        rightPriceScale: { borderColor: '#1f1f1f' },
+        timeScale: { borderColor: '#1f1f1f', timeVisible: true },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+      });
+
+      const volChart = LightweightCharts.createChart(volEl, {
+        width: volEl.clientWidth,
+        height: volEl.clientHeight,
+        layout: { background: { type: 'solid', color: '#0a0a0a' }, textColor: 'rgba(224,224,224,0)' },
+        grid: { vertLines: { color: '#1f1f1f' }, horzLines: { color: '#1f1f1f' } },
+        rightPriceScale: { borderColor: '#1f1f1f' },
+        timeScale: { borderColor: '#1f1f1f', timeVisible: true }
+      });
+
+      volChart.priceScale('right').applyOptions({ visible: false });
+
+      const candleSeries = chart.addCandlestickSeries({
+        upColor: '#2de07a',
+        downColor: '#ff4d4f',
+        borderUpColor: '#2de07a',
+        borderDownColor: '#ff4d4f',
+        wickUpColor: '#2de07a',
+        wickDownColor: '#ff4d4f'
+      });
+      const levelSeries = [];
+
+      const volSeries = volChart.addHistogramSeries({
+        priceFormat: { type: 'volume' },
+        priceScaleId: '',
+        scaleMargins: { top: 0.92, bottom: 0.00 }
+      });
+
+      const sync = () => {
+        const r = chart.timeScale().getVisibleLogicalRange();
+        if (r) volChart.timeScale().setVisibleLogicalRange(r);
+      };
+      chart.timeScale().subscribeVisibleLogicalRangeChange(sync);
+
+      const onResize = () => {
+        chart.applyOptions({ width: priceEl.clientWidth, height: priceEl.clientHeight });
+        volChart.applyOptions({ width: volEl.clientWidth, height: volEl.clientHeight });
+        sync();
+      };
+      window.addEventListener('resize', onResize);
+
+      return {
+        chart,
+        volChart,
+        candleSeries,
+        volSeries,
+        levelSeries,
+        cleanup() { window.removeEventListener('resize', onResize); }
+      };
+    }
+
+    function destroyAllCharts() {
+      const all = [
+        { chart: dailyChart, volChart: dailyVolChart, cleanup: destroyAllCharts.dailyCleanup },
+        { chart: monthlyChart, volChart: monthlyVolChart, cleanup: destroyAllCharts.monthlyCleanup }
+      ];
+      all.forEach(item => {
+        if (item.cleanup) item.cleanup();
+        if (item.chart) item.chart.remove();
+        if (item.volChart) item.volChart.remove();
+      });
+      dailyChart = dailyVolChart = dailyCandleSeries = dailyVolSeries = dailyLevelSeries = null;
+      monthlyChart = monthlyVolChart = monthlyCandleSeries = monthlyVolSeries = monthlyLevelSeries = null;
+      destroyAllCharts.dailyCleanup = null;
+      destroyAllCharts.monthlyCleanup = null;
+    }
+
+    function initCharts() {
+      destroyAllCharts();
+      const daily = createPairedCharts('dailyPrice', 'dailyVol');
+      dailyChart = daily.chart;
+      dailyVolChart = daily.volChart;
+      dailyCandleSeries = daily.candleSeries;
+      dailyVolSeries = daily.volSeries;
+      dailyLevelSeries = daily.levelSeries;
+      destroyAllCharts.dailyCleanup = daily.cleanup;
+
+      const monthly = createPairedCharts('monthlyPrice', 'monthlyVol');
+      monthlyChart = monthly.chart;
+      monthlyVolChart = monthly.volChart;
+      monthlyCandleSeries = monthly.candleSeries;
+      monthlyVolSeries = monthly.volSeries;
+      monthlyLevelSeries = monthly.levelSeries;
+      destroyAllCharts.monthlyCleanup = monthly.cleanup;
+    }
+
+    function focusChartRange(chart, volChart, candles, daysBack) {
+      if (!candles.length) return;
+      const lastTime = candles[candles.length - 1].time;
+      const from = lastTime - (daysBack * 24 * 60 * 60);
+      chart.timeScale().setVisibleRange({ from, to: lastTime });
+      volChart.timeScale().setVisibleRange({ from, to: lastTime });
+    }
+
+    function renderChart(candles, markers, levels, candleSeries, volSeries, levelSeries, chart, volChart, daysBack) {
+      candleSeries.setData(candles.map(c => ({
+        time: c.time,
+        open: c.open,
+        high: c.high,
+        low: c.low,
+        close: c.close
+      })));
+      candleSeries.setMarkers(markers);
+      volSeries.setData(buildVolumeBars(candles));
+
+      (levelSeries || []).forEach(s => { try { chart.removeSeries(s); } catch {} });
+      if (Array.isArray(levelSeries)) levelSeries.length = 0;
+      (levels || []).slice(0, 14).forEach(line => {
+        const s = chart.addLineSeries({
+          color: line.color,
+          lineWidth: /Support|Resistance/i.test(line.title) ? 2 : 1,
+          lineStyle: /Support|Resistance/i.test(line.title) ? LightweightCharts.LineStyle.Solid : LightweightCharts.LineStyle.Dashed,
+          crosshairMarkerVisible: false,
+          lastValueVisible: true,
+          priceLineVisible: false,
+          title: line.title
+        });
+        s.setData([
+          { time: candles[0].time, value: line.price },
+          { time: candles[candles.length - 1].time, value: line.price }
+        ]);
+        levelSeries.push(s);
+      });
+
+      chart.timeScale().fitContent();
+      volChart.timeScale().fitContent();
+      if (Number.isFinite(daysBack) && daysBack > 0) {
+        focusChartRange(chart, volChart, candles, daysBack);
+      }
+    }
+
+    function getSignalText(payload) {
+      const regime = payload?.returns?.regime || payload?.trend?.state || 'mixed';
+      const patternCount = Array.isArray(payload?.patterns) ? payload.patterns.length : 0;
+      const s = String(regime).replace(/_/g, ' ');
+      if (patternCount > 0) return `${s} | ${patternCount} pattern${patternCount > 1 ? 's' : ''}`;
+      return s;
+    }
+
+    async function load() {
+      const ticker = ($('tickerInput').value || 'SPY').trim().toUpperCase();
+      $('tickerInput').value = ticker;
+      $('metricTicker').textContent = ticker;
+      $('dailyOverlayTicker').textContent = ticker;
+      $('monthlyOverlayTicker').textContent = ticker;
+      setTickerQueryParam(ticker);
+      setStatus(`Loading ${ticker} daily and monthly charts...`);
+      setMeta('dailyMeta', 'Loading...');
+      setMeta('monthlyMeta', 'Loading...');
+      setMeta('summaryMeta', 'Loading...');
+
+      try {
+        const [dailyRes, monthlyRes] = await Promise.all([
+          fetchPatternScan(ticker, 'd'),
+          fetchPatternScan(ticker, 'm')
+        ]);
+
+        const dailyPayload = dailyRes.payload;
+        const monthlyPayload = monthlyRes.payload;
+        const dailyCandles = parseCandles(dailyPayload);
+        const monthlyCandles = parseCandles(monthlyPayload);
+
+        if (!dailyCandles.length) throw new Error('No daily candle data returned.');
+        if (!monthlyCandles.length) throw new Error('No monthly candle data returned.');
+
+        renderChart(
+          dailyCandles,
+          parsePatternMarkers(dailyPayload, dailyCandles),
+          collectLevelLines(dailyPayload),
+          dailyCandleSeries,
+          dailyVolSeries,
+          dailyLevelSeries,
+          dailyChart,
+          dailyVolChart,
+          183
+        );
+
+        renderChart(
+          monthlyCandles,
+          parsePatternMarkers(monthlyPayload, monthlyCandles),
+          collectLevelLines(monthlyPayload),
+          monthlyCandleSeries,
+          monthlyVolSeries,
+          monthlyLevelSeries,
+          monthlyChart,
+          monthlyVolChart,
+          730
+        );
+
+        const dailyLast = dailyCandles[dailyCandles.length - 1]?.close;
+        const monthlyLast = monthlyCandles[monthlyCandles.length - 1]?.close;
+        const dailySignal = getSignalText(dailyPayload);
+        const monthlySignal = getSignalText(monthlyPayload);
+
+        $('metricDailyLast').textContent = fmtPrice(dailyLast);
+        $('metricDailyBars').textContent = `${dailyCandles.length} daily bars`;
+        $('metricMonthlyLast').textContent = fmtPrice(monthlyLast);
+        $('metricMonthlyBars').textContent = `${monthlyCandles.length} monthly bars`;
+        $('metricSignal').textContent = dailySignal;
+        $('metricSignal').className = `metric-value ${/downtrend|bear/i.test(dailySignal) ? 'bear' : /uptrend|bull/i.test(dailySignal) ? 'bull' : ''}`;
+        $('metricSignalNote').textContent = `Daily: ${dailySignal} | Monthly: ${monthlySignal}`;
+
+        const dailySupport = dailyPayload?.nearest_support?.level;
+        const dailyResistance = dailyPayload?.nearest_resistance?.level;
+        const monthlySupport = monthlyPayload?.nearest_support?.level;
+        const monthlyResistance = monthlyPayload?.nearest_resistance?.level;
+
+        setMeta('dailyMeta', `tf: ${dailyRes.tf} | bars: ${dailyCandles.length} | last: ${Number(dailyLast).toFixed(2)} | S ${Number.isFinite(num(dailySupport)) ? num(dailySupport).toFixed(2) : '—'} | R ${Number.isFinite(num(dailyResistance)) ? num(dailyResistance).toFixed(2) : '—'}`);
+        setMeta('monthlyMeta', `tf: ${monthlyRes.tf} | bars: ${monthlyCandles.length} | last: ${Number(monthlyLast).toFixed(2)} | S ${Number.isFinite(num(monthlySupport)) ? num(monthlySupport).toFixed(2) : '—'} | R ${Number.isFinite(num(monthlyResistance)) ? num(monthlyResistance).toFixed(2) : '—'}`);
+        setMeta('summaryMeta', `Ticker ${ticker} | Daily ${dailyPayload?.returns?.regime || dailyPayload?.trend?.state || '—'} | Monthly ${monthlyPayload?.returns?.regime || monthlyPayload?.trend?.state || '—'}`);
+
+        $('pageTitle').textContent = `${ticker} Technical Analysis Report`;
+        $('pageSubtitle').textContent = 'Daily and monthly structure view';
+        setStatus(`Loaded ${ticker}. Daily and monthly charts ready.`);
+      } catch (e) {
+        console.error(e);
+        setStatus(`Error: ${e.message}`);
+        setMeta('dailyMeta', `Error: ${e.message}`);
+        setMeta('monthlyMeta', `Error: ${e.message}`);
+        setMeta('summaryMeta', 'Load failed');
+      }
+    }
+
+    $('loadBtn').addEventListener('click', load);
+    $('tickerInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
+
+    const urlTicker = getTickerFromQuery();
+    if (urlTicker) $('tickerInput').value = urlTicker;
+
+    initCharts();
+    load();
+  </script>
+</body>
+</html>

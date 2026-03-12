@@ -7,7 +7,6 @@
 
   <link rel="icon" href="https://oqliv.com/favicon.ico" />
   <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -104,25 +103,6 @@
 
     .btn:hover { background: var(--accent-2); }
 
-    .share-btn {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid #2b2b2b;
-      padding: 0.55rem 0.9rem;
-      border-radius: 6px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.88rem;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-    }
-
-    .share-btn:hover {
-      border-color: var(--accent);
-      color: #fff;
-      background: rgba(255,107,53,0.08);
-    }
-
     .status-row {
       display: flex;
       justify-content: space-between;
@@ -166,14 +146,6 @@
       gap: 1rem;
     }
 
-    .chart-header-right {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
     .chart-title-wrap h2,
     .summary-header h2 {
       font-size: 1.25rem;
@@ -206,57 +178,6 @@
       pointer-events: none;
       user-select: none;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    }
-
-    .chart-watermark {
-      position: absolute;
-      left: 18px;
-      top: 120px;
-      z-index: 8;
-      pointer-events: none;
-      user-select: none;
-      padding: 0;
-      min-width: 0;
-      background: transparent;
-      border: 0;
-      box-shadow: none;
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
-    }
-
-    .chart-watermark-ticker {
-      color: rgba(170,170,170,0.42);
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      line-height: 1;
-    }
-
-    .chart-watermark-brand {
-      margin-top: 5px;
-      color: rgba(170,170,170,0.34);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: lowercase;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-    }
-
-    @media (max-width: 768px) {
-      .chart-watermark {
-        left: 10px;
-        top: 500px;
-        z-index: 6;
-      }
-
-      .chart-watermark-ticker {
-        font-size: 14px;
-        line-height: 1;
-      }
-
-      .chart-watermark-brand {
-        font-size: 9px;
-        margin-top: 2px;
-      }
     }
 
     .summary-body {
@@ -303,7 +224,6 @@
       .header-right { text-align: left; width: 100%; min-width: 0; }
       .controls { justify-content: flex-start; }
       .chart-header, .summary-header { flex-direction: column; align-items: flex-start; }
-      .chart-header-right { width: 100%; justify-content: flex-start; }
       .chart-meta { text-align: left; }
       .summary-body { grid-template-columns: 1fr 1fr; }
     }
@@ -318,7 +238,7 @@
     <div class="header">
       <div class="header-left">
         <h1 id="pageTitle">Technical Analysis Report</h1>
-        <p class="subtitle" id="pageSubtitle">Daily and monthly structure view</p>
+        <p class="subtitle" id="pageSubtitle">Daily and monthly pivot view</p>
       </div>
       <div class="header-right">
         <div class="controls">
@@ -354,48 +274,34 @@
           <div class="metric-note" id="metricMonthlyBars">—</div>
         </div>
         <div class="metric">
-          <div class="metric-label">Structure</div>
+          <div class="metric-label">Signal</div>
           <div class="metric-value" id="metricSignal">—</div>
-          <div class="metric-note" id="metricSignalNote">Daily and monthly structure state</div>
+          <div class="metric-note" id="metricSignalNote">Daily and monthly pivot state</div>
         </div>
       </div>
     </div>
 
     <div class="chart-grid">
-      <div class="chart-section" id="dailySection" data-export-name="daily-pattern-scan">
+      <div class="chart-section">
         <div class="chart-header">
           <div class="chart-title-wrap">
-            <h2>Daily Pattern Scan</h2>
-            <div class="chart-desc">Short-term structure view from the daily pattern-scan endpoint.</div>
+            <h2>Daily Pivot Chart</h2>
+            <div class="chart-desc">Short-term pivot map from the daily timeframe.</div>
           </div>
-          <div class="chart-header-right">
-            <button class="share-btn" onclick="shareChartAsImage('dailySection')">Share Image</button>
-            <div class="chart-meta" id="dailyMeta">—</div>
-          </div>
-        </div>
-        <div class="chart-watermark">
-          <div class="chart-watermark-ticker" id="dailyOverlayTicker">SPY</div>
-          <div class="chart-watermark-brand">www.oqliv.com</div>
+          <div class="chart-meta" id="dailyMeta">—</div>
         </div>
         <div id="dailyPrice" class="price-pane"></div>
         <div id="dailyVol" class="vol-pane"></div>
         <div class="float-brand">www.oqliv.com</div>
       </div>
 
-      <div class="chart-section" id="monthlySection" data-export-name="monthly-pattern-scan">
+      <div class="chart-section">
         <div class="chart-header">
           <div class="chart-title-wrap">
-            <h2>Monthly Pattern Scan</h2>
-            <div class="chart-desc">Higher timeframe structure view from the monthly pattern-scan endpoint.</div>
+            <h2>Monthly Pivot Chart</h2>
+            <div class="chart-desc">Higher timeframe view for broader trend and major turning points.</div>
           </div>
-          <div class="chart-header-right">
-            <button class="share-btn" onclick="shareChartAsImage('monthlySection')">Share Image</button>
-            <div class="chart-meta" id="monthlyMeta">—</div>
-          </div>
-        </div>
-        <div class="chart-watermark">
-          <div class="chart-watermark-ticker" id="monthlyOverlayTicker">SPY</div>
-          <div class="chart-watermark-brand">www.oqliv.com</div>
+          <div class="chart-meta" id="monthlyMeta">—</div>
         </div>
         <div id="monthlyPrice" class="price-pane"></div>
         <div id="monthlyVol" class="vol-pane"></div>
@@ -408,8 +314,8 @@
     const API_BASE = 'https://oqliv.com';
     const $ = (id) => document.getElementById(id);
 
-    let dailyChart, dailyVolChart, dailyCandleSeries, dailyVolSeries, dailyLevelSeries;
-    let monthlyChart, monthlyVolChart, monthlyCandleSeries, monthlyVolSeries, monthlyLevelSeries;
+    let dailyChart, dailyVolChart, dailyCandleSeries, dailyVolSeries;
+    let monthlyChart, monthlyVolChart, monthlyCandleSeries, monthlyVolSeries;
 
     function getTickerFromQuery() {
       const params = new URLSearchParams(window.location.search);
@@ -446,12 +352,9 @@
       return Number.isFinite(n) ? '$' + n.toFixed(2) : '—';
     }
 
-    function buildPatternScanUrl(ticker, tf) {
+    function buildPivotUrl(ticker, tf) {
       const t = encodeURIComponent((ticker || '').trim().toUpperCase());
-      if (tf === 'd') {
-        return `${API_BASE}/performance/api/json/pattern-scan?ticker=${t}&tf=d&period=1y&bars=260`;
-      }
-      return `${API_BASE}/performance/api/json/pattern-scan?ticker=${t}&tf=m&period=15y&bars=180`;
+      return `${API_BASE}/performance/api/json/pivots-now?ticker=${t}&tf=${encodeURIComponent(tf)}&left=5&eps=0`;
     }
 
     async function fetchJSON(url) {
@@ -467,9 +370,17 @@
       return data;
     }
 
-    async function fetchPatternScan(ticker, tf) {
-      const payload = await fetchJSON(buildPatternScanUrl(ticker, tf));
-      return { payload, tf };
+    async function fetchPivotWithFallback(ticker, tfCandidates) {
+      let lastError = null;
+      for (const tf of tfCandidates) {
+        try {
+          const payload = await fetchJSON(buildPivotUrl(ticker, tf));
+          return { payload, tf };
+        } catch (err) {
+          lastError = err;
+        }
+      }
+      throw lastError || new Error('Unable to load timeframe data.');
     }
 
     function parseCandles(payload) {
@@ -501,95 +412,22 @@
         }));
     }
 
-    function patternLabel(pattern) {
-      return String(pattern || '')
-        .replace(/_/g, ' ')
-        .split(' ')
-        .filter(Boolean)
-        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-    }
-
-    function parsePatternMarkers(payload, candles) {
-      const patterns = Array.isArray(payload?.patterns) ? payload.patterns : [];
+    function parsePivotMarkers(payload, candles) {
+      const peaks = payload?.signals?.peak_now || [];
+      const valleys = payload?.signals?.valley_now || [];
       const markers = [];
 
-      for (const p of patterns) {
-        const name = String(p?.pattern || 'pattern');
-        const conf = p?.confidence ? ` (${p.confidence})` : '';
-
-        if (Number.isFinite(Number(p?.a)) && candles[Number(p.a)]) {
-          markers.push({
-            time: candles[Number(p.a)].time,
-            position: 'aboveBar',
-            shape: 'circle',
-            color: '#ff8c42',
-            text: `${patternLabel(name)} A${conf}`
-          });
-        }
-
-        if (Number.isFinite(Number(p?.b)) && candles[Number(p.b)]) {
-          markers.push({
-            time: candles[Number(p.b)].time,
-            position: 'aboveBar',
-            shape: 'circle',
-            color: '#ff8c42',
-            text: `${patternLabel(name)} B${conf}`
-          });
-        }
-
-        if (Number.isFinite(Number(p?.h)) && candles[Number(p.h)]) {
-          markers.push({
-            time: candles[Number(p.h)].time,
-            position: 'aboveBar',
-            shape: 'arrowDown',
-            color: '#ff4d4f',
-            text: `${patternLabel(name)} head${conf}`
-          });
-        }
-
-        if (Number.isFinite(Number(p?.l)) && candles[Number(p.l)]) {
-          markers.push({
-            time: candles[Number(p.l)].time,
-            position: 'belowBar',
-            shape: 'arrowUp',
-            color: '#2de07a',
-            text: `${patternLabel(name)} low${conf}`
-          });
-        }
-
-        if (Number.isFinite(Number(p?.r)) && candles[Number(p.r)]) {
-          markers.push({
-            time: candles[Number(p.r)].time,
-            position: 'aboveBar',
-            shape: 'circle',
-            color: '#ff8c42',
-            text: `${patternLabel(name)} R${conf}`
-          });
-        }
+      for (const p of peaks) {
+        const i = p.i ?? p.index;
+        if (!Number.isInteger(i) || !candles[i]) continue;
+        markers.push({ time: candles[i].time, position: 'aboveBar', shape: 'arrowDown', color: '#ff4d4f', text: 'Peak' });
       }
-
+      for (const v of valleys) {
+        const i = v.i ?? v.index;
+        if (!Number.isInteger(i) || !candles[i]) continue;
+        markers.push({ time: candles[i].time, position: 'belowBar', shape: 'arrowUp', color: '#2de07a', text: 'Valley' });
+      }
       return markers.sort((a, b) => a.time - b.time);
-    }
-
-    function collectLevelLines(payload) {
-      const lines = [];
-      const pushLine = (price, color, title) => {
-        const v = num(price);
-        if (!Number.isFinite(v)) return;
-        lines.push({ price: v, color, title });
-      };
-
-      pushLine(payload?.nearest_support?.level, 'rgba(45,224,122,0.85)', 'Support');
-      pushLine(payload?.nearest_resistance?.level, 'rgba(255,77,79,0.85)', 'Resistance');
-
-      const seen = new Set();
-      return lines.filter(line => {
-        const key = `${line.title}|${line.price.toFixed(4)}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
     }
 
     function createPairedCharts(priceElId, volElId) {
@@ -626,8 +464,6 @@
         wickDownColor: '#ff4d4f'
       });
 
-      const levelSeries = [];
-
       const volSeries = volChart.addHistogramSeries({
         priceFormat: { type: 'volume' },
         priceScaleId: '',
@@ -652,7 +488,6 @@
         volChart,
         candleSeries,
         volSeries,
-        levelSeries,
         cleanup() { window.removeEventListener('resize', onResize); }
       };
     }
@@ -662,28 +497,24 @@
         { chart: dailyChart, volChart: dailyVolChart, cleanup: destroyAllCharts.dailyCleanup },
         { chart: monthlyChart, volChart: monthlyVolChart, cleanup: destroyAllCharts.monthlyCleanup }
       ];
-
       all.forEach(item => {
         if (item.cleanup) item.cleanup();
         if (item.chart) item.chart.remove();
         if (item.volChart) item.volChart.remove();
       });
-
-      dailyChart = dailyVolChart = dailyCandleSeries = dailyVolSeries = dailyLevelSeries = null;
-      monthlyChart = monthlyVolChart = monthlyCandleSeries = monthlyVolSeries = monthlyLevelSeries = null;
+      dailyChart = dailyVolChart = dailyCandleSeries = dailyVolSeries = null;
+      monthlyChart = monthlyVolChart = monthlyCandleSeries = monthlyVolSeries = null;
       destroyAllCharts.dailyCleanup = null;
       destroyAllCharts.monthlyCleanup = null;
     }
 
     function initCharts() {
       destroyAllCharts();
-
       const daily = createPairedCharts('dailyPrice', 'dailyVol');
       dailyChart = daily.chart;
       dailyVolChart = daily.volChart;
       dailyCandleSeries = daily.candleSeries;
       dailyVolSeries = daily.volSeries;
-      dailyLevelSeries = daily.levelSeries;
       destroyAllCharts.dailyCleanup = daily.cleanup;
 
       const monthly = createPairedCharts('monthlyPrice', 'monthlyVol');
@@ -691,7 +522,6 @@
       monthlyVolChart = monthly.volChart;
       monthlyCandleSeries = monthly.candleSeries;
       monthlyVolSeries = monthly.volSeries;
-      monthlyLevelSeries = monthly.levelSeries;
       destroyAllCharts.monthlyCleanup = monthly.cleanup;
     }
 
@@ -703,7 +533,7 @@
       volChart.timeScale().setVisibleRange({ from, to: lastTime });
     }
 
-    function renderChart(candles, markers, levels, candleSeries, volSeries, levelSeries, chart, volChart, daysBack) {
+    function renderChart(candles, markers, candleSeries, volSeries, chart, volChart, daysBack) {
       candleSeries.setData(candles.map(c => ({
         time: c.time,
         open: c.open,
@@ -711,123 +541,29 @@
         low: c.low,
         close: c.close
       })));
-
       candleSeries.setMarkers(markers);
       volSeries.setData(buildVolumeBars(candles));
-
-      (levelSeries || []).forEach(s => {
-        try { chart.removeSeries(s); } catch {}
-      });
-
-      if (Array.isArray(levelSeries)) levelSeries.length = 0;
-
-      (levels || []).slice(0, 14).forEach(line => {
-        const s = chart.addLineSeries({
-          color: line.color,
-          lineWidth: /Support|Resistance/i.test(line.title) ? 2 : 1,
-          lineStyle: /Support|Resistance/i.test(line.title)
-            ? LightweightCharts.LineStyle.Solid
-            : LightweightCharts.LineStyle.Dashed,
-          crosshairMarkerVisible: false,
-          lastValueVisible: true,
-          priceLineVisible: false,
-          title: line.title
-        });
-
-        s.setData([
-          { time: candles[0].time, value: line.price },
-          { time: candles[candles.length - 1].time, value: line.price }
-        ]);
-
-        levelSeries.push(s);
-      });
-
       chart.timeScale().fitContent();
       volChart.timeScale().fitContent();
-
       if (Number.isFinite(daysBack) && daysBack > 0) {
         focusChartRange(chart, volChart, candles, daysBack);
       }
     }
 
-    function getSignalText(payload) {
-      const regime = payload?.returns?.regime || payload?.trend?.state || 'mixed';
-      const patternCount = Array.isArray(payload?.patterns) ? payload.patterns.length : 0;
-      const s = String(regime).replace(/_/g, ' ');
-      if (patternCount > 0) return `${s} | ${patternCount} pattern${patternCount > 1 ? 's' : ''}`;
-      return s;
-    }
-
-    async function blobToFile(blob, filename) {
-      return new File([blob], filename, { type: blob.type || 'image/png' });
-    }
-
-    async function shareChartAsImage(sectionId) {
-      const section = document.getElementById(sectionId);
-      if (!section) return;
-
-      const ticker = (($('tickerInput').value || 'chart').trim().toUpperCase()) || 'CHART';
-      const exportName = section.dataset.exportName || 'chart';
-      const filename = `${ticker}-${exportName}.png`;
-
-      const shareBtn = section.querySelector('.share-btn');
-      const originalText = shareBtn ? shareBtn.textContent : '';
-
-      try {
-        if (shareBtn) {
-          shareBtn.disabled = true;
-          shareBtn.textContent = 'Preparing...';
-        }
-
-        const canvas = await html2canvas(section, {
-          backgroundColor: '#141414',
-          scale: 2,
-          useCORS: true,
-          allowTaint: true
-        });
-
-        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-        if (!blob) throw new Error('Failed to generate image.');
-
-        const file = await blobToFile(blob, filename);
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: `${ticker} chart`,
-            text: `${ticker} chart from OQLIV`
-          });
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-        }
-
-        setStatus(`Chart image ready: ${filename}`);
-      } catch (e) {
-        console.error(e);
-        setStatus(`Share failed: ${e.message}`);
-      } finally {
-        if (shareBtn) {
-          shareBtn.disabled = false;
-          shareBtn.textContent = originalText || 'Share Image';
-        }
-      }
+    function getSignalText(payload, candles) {
+      const lastIdx = candles.length - 1;
+      const lastIsPeak = (payload?.signals?.peak_now || []).some(x => x?.i === lastIdx);
+      const lastIsValley = (payload?.signals?.valley_now || []).some(x => x?.i === lastIdx);
+      if (lastIsPeak) return 'Peak forming';
+      if (lastIsValley) return 'Valley forming';
+      return 'No active pivot';
     }
 
     async function load() {
       const ticker = ($('tickerInput').value || 'SPY').trim().toUpperCase();
       $('tickerInput').value = ticker;
       $('metricTicker').textContent = ticker;
-      $('dailyOverlayTicker').textContent = ticker;
-      $('monthlyOverlayTicker').textContent = ticker;
       setTickerQueryParam(ticker);
-
       setStatus(`Loading ${ticker} daily and monthly charts...`);
       setMeta('dailyMeta', 'Loading...');
       setMeta('monthlyMeta', 'Loading...');
@@ -835,8 +571,8 @@
 
       try {
         const [dailyRes, monthlyRes] = await Promise.all([
-          fetchPatternScan(ticker, 'd'),
-          fetchPatternScan(ticker, 'm')
+          fetchPivotWithFallback(ticker, ['d']),
+          fetchPivotWithFallback(ticker, ['mo', 'm', 'monthly'])
         ]);
 
         const dailyPayload = dailyRes.payload;
@@ -849,11 +585,9 @@
 
         renderChart(
           dailyCandles,
-          parsePatternMarkers(dailyPayload, dailyCandles),
-          collectLevelLines(dailyPayload),
+          parsePivotMarkers(dailyPayload, dailyCandles),
           dailyCandleSeries,
           dailyVolSeries,
-          dailyLevelSeries,
           dailyChart,
           dailyVolChart,
           183
@@ -861,11 +595,9 @@
 
         renderChart(
           monthlyCandles,
-          parsePatternMarkers(monthlyPayload, monthlyCandles),
-          collectLevelLines(monthlyPayload),
+          parsePivotMarkers(monthlyPayload, monthlyCandles),
           monthlyCandleSeries,
           monthlyVolSeries,
-          monthlyLevelSeries,
           monthlyChart,
           monthlyVolChart,
           730
@@ -873,40 +605,24 @@
 
         const dailyLast = dailyCandles[dailyCandles.length - 1]?.close;
         const monthlyLast = monthlyCandles[monthlyCandles.length - 1]?.close;
-        const dailySignal = getSignalText(dailyPayload);
-        const monthlySignal = getSignalText(monthlyPayload);
+        const dailySignal = getSignalText(dailyPayload, dailyCandles);
+        const monthlySignal = getSignalText(monthlyPayload, monthlyCandles);
 
         $('metricDailyLast').textContent = fmtPrice(dailyLast);
         $('metricDailyBars').textContent = `${dailyCandles.length} daily bars`;
         $('metricMonthlyLast').textContent = fmtPrice(monthlyLast);
         $('metricMonthlyBars').textContent = `${monthlyCandles.length} monthly bars`;
         $('metricSignal').textContent = dailySignal;
-        $('metricSignal').className = `metric-value ${/downtrend|bear/i.test(dailySignal) ? 'bear' : /uptrend|bull/i.test(dailySignal) ? 'bull' : ''}`;
+        $('metricSignal').className = `metric-value ${/Peak/i.test(dailySignal) ? 'bear' : /Valley/i.test(dailySignal) ? 'bull' : ''}`;
         $('metricSignalNote').textContent = `Daily: ${dailySignal} | Monthly: ${monthlySignal}`;
 
-        const dailySupport = dailyPayload?.nearest_support?.level;
-        const dailyResistance = dailyPayload?.nearest_resistance?.level;
-        const monthlySupport = monthlyPayload?.nearest_support?.level;
-        const monthlyResistance = monthlyPayload?.nearest_resistance?.level;
-
-        setMeta(
-          'dailyMeta',
-          `tf: ${dailyRes.tf} | bars: ${dailyCandles.length} | last: ${Number(dailyLast).toFixed(2)} | S ${Number.isFinite(num(dailySupport)) ? num(dailySupport).toFixed(2) : '—'} | R ${Number.isFinite(num(dailyResistance)) ? num(dailyResistance).toFixed(2) : '—'}`
-        );
-
-        setMeta(
-          'monthlyMeta',
-          `tf: ${monthlyRes.tf} | bars: ${monthlyCandles.length} | last: ${Number(monthlyLast).toFixed(2)} | S ${Number.isFinite(num(monthlySupport)) ? num(monthlySupport).toFixed(2) : '—'} | R ${Number.isFinite(num(monthlyResistance)) ? num(monthlyResistance).toFixed(2) : '—'}`
-        );
-
-        setMeta(
-          'summaryMeta',
-          `Ticker ${ticker} | Daily ${dailyPayload?.returns?.regime || dailyPayload?.trend?.state || '—'} | Monthly ${monthlyPayload?.returns?.regime || monthlyPayload?.trend?.state || '—'}`
-        );
+        setMeta('dailyMeta', `tf: ${dailyRes.tf} | bars: ${dailyCandles.length} | last: ${Number(dailyLast).toFixed(2)}`);
+        setMeta('monthlyMeta', `tf: ${monthlyRes.tf} | bars: ${monthlyCandles.length} | last: ${Number(monthlyLast).toFixed(2)}`);
+        setMeta('summaryMeta', `Ticker ${ticker} | Daily tf ${dailyRes.tf} | Monthly tf ${monthlyRes.tf}`);
 
         $('pageTitle').textContent = `${ticker} Technical Analysis Report`;
-        $('pageSubtitle').textContent = 'Daily and monthly structure view';
-        setStatus(`Loaded ${ticker}. Daily and monthly charts ready.`);
+        $('pageSubtitle').textContent = 'Daily and monthly pivot view';
+        setStatus(`Loaded ${ticker}. Daily (${dailyRes.tf}) and monthly (${monthlyRes.tf}) charts ready.`);
       } catch (e) {
         console.error(e);
         setStatus(`Error: ${e.message}`);
@@ -917,9 +633,7 @@
     }
 
     $('loadBtn').addEventListener('click', load);
-    $('tickerInput').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') load();
-    });
+    $('tickerInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') load(); });
 
     const urlTicker = getTickerFromQuery();
     if (urlTicker) $('tickerInput').value = urlTicker;

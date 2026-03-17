@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OQLIV — Middle East Risk Brief</title>
+  <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0a0a0a;
+      --panel: #141414;
+      --panel-2: #101010;
+      --border: #1f1f1f;
+      --text: #e0e0e0;
+      --muted: #888;
+      --muted-2: #666;
+      --accent: #ff6b35;
+      --accent-2: #ff8c42;
+      --bull: #2de07a;
+      --bear: #ff4d4f;
+      --warn: #ffb020;
+      --radius: 8px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 1.25rem;
+      line-height: 1.5;
+    }
+    .container { max-width: 1600px; margin: 0 auto; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-left h1 {
+      font-size: 1.95rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.3rem;
+      letter-spacing: -0.02em;
+    }
+    .subtitle { color: var(--muted); font-size: 0.92rem; }
+    .header-right { text-align: right; min-width: 260px; }
+    .headline-price {
+      font-size: 2.15rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+    .headline-label { color: var(--muted); font-size: 0.78rem; margin-top: 0.2rem; }
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 0.8rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .section, .panel, .metric-card, .chart-section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .section, .panel, .chart-section { margin-bottom: 1rem; }
+    .section-header, .panel-header, .chart-header {
+      padding: 0.95rem 1rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+    .section-header h2, .panel-header h2, .chart-header h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .section-sub, .panel-sub, .chart-desc {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 0.15rem;
+    }
+    .brief-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .bullet-box {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.95rem;
+    }
+    .bullet-box h3 {
+      font-size: 0.9rem;
+      color: #fff;
+      margin-bottom: 0.6rem;
+    }
+    .bullet-box ul {
+      padding-left: 1rem;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+    .bullet-box li { margin-bottom: 0.55rem; }
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.8rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 30px;
+      padding: 0.38rem 0.62rem;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.74rem;
+      color: #fff;
+    }
+    .badge.warn { color: var(--warn); }
+    .badge.bull { color: var(--bull); }
+    .badge.bear { color: var(--bear); }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.75rem;
+      padding: 1rem;
+    }
+    .metric-card {
+      background: var(--panel-2);
+      padding: 0.8rem 0.85rem;
+      min-height: 88px;
+    }
+    .metric-label {
+      color: var(--muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.35rem;
+    }
+    .metric-value {
+      color: #fff;
+      font-size: 1.08rem;
+      font-weight: 700;
+      line-height: 1.15;
+      word-break: break-word;
+    }
+    .metric-note {
+      margin-top: 0.35rem;
+      font-size: 0.74rem;
+      color: var(--muted-2);
+    }
+    .metric-value.bull { color: var(--bull); }
+    .metric-value.bear { color: var(--bear); }
+    .metric-value.warn { color: var(--warn); }
+    .chart-section { overflow: hidden; position: relative; }
+    .chart-header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+    }
+    .chart-meta {
+      color: var(--muted-2);
+      font-size: 0.72rem;
+      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .price-pane { height: 320px; }
+    .vol-pane { height: 88px; border-top: 1px solid var(--border); }
+    .chart-watermark {
+      position: absolute;
+      left: 16px;
+      top: 76px;
+      z-index: 8;
+      pointer-events: none;
+      user-select: none;
+    }
+    .chart-watermark-ticker {
+      color: rgba(170,170,170,0.38);
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+    .chart-watermark-brand {
+      margin-top: 4px;
+      color: rgba(170,170,170,0.30);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: lowercase;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .float-brand {
+      position: absolute;
+      right: 10px;
+      bottom: 8px;
+      font-size: 11px;
+      color: rgba(224,224,224,0.35);
+      pointer-events: none;
+      user-select: none;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .ticker-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .small-note {
+      padding: 0 1rem 1rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    @media (max-width: 1200px) {
+      .brief-grid, .ticker-grid { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      .header { flex-direction: column; align-items: flex-start; }
+      .header-right { text-align: left; width: 100%; }
+      .section-header, .panel-header, .chart-header { flex-direction: column; align-items: flex-start; }
+      .chart-header-right { align-items: flex-start; }
+      .chart-meta { text-align: left; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .chart-watermark { left: 10px; top: 70px; }
+    }
+    @media (max-width: 560px) {
+      .metrics-grid { grid-template-columns: 1fr; }
+      .headline-price { font-size: 1.8rem; }
+      .header-left h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <h1>Middle East Risk Brief</h1>
+        <p class="subtitle">Iran, Kharg Island, oil shock risk, and cross-asset read-through for SPY, TSM, and XLE</p>
+      </div>
+      <div class="header-right">
+        <div class="headline-price" id="spyHeadline">—</div>
+        <div class="headline-label">SPY last</div>
+        <div class="status-row">
+          <div id="status">Loading market panels...</div>
+          <div>www.oqliv.com</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <h2>What is going on right now</h2>
+          <div class="section-sub">Straight summary for market participants</div>
+        </div>
+      </div>
+      <div class="brief-grid">
+        <div class="bullet-box">
+          <h3>Core read</h3>
+          <ul>
+            <li>Kharg Island is the pressure point because it handles most of Iran's crude export flow. The latest escalation hit military assets there, but not the core oil infrastructure yet.</li>
+            <li>That means the market is pricing the threat of a bigger supply shock, not fully pricing a completed supply collapse.</li>
+            <li>If Kharg's oil infrastructure gets directly disabled, Iran's exports to China and broader Asia become materially harder and slower, even if some barrels still move through workarounds.</li>
+            <li>The bigger macro problem is not just Iran supply. It is the combined risk of disrupted shipping, higher insurance, delayed cargoes, and inflation pressure hitting global equities.</li>
+            <li>That is why broad equities can trade like a tariff tantrum replay: oil up, inflation fear up, yields and growth expectations in conflict, risk assets down.</li>
+          </ul>
+          <div class="badge-row">
+            <div class="badge warn">Kharg = escalation lever</div>
+            <div class="badge bear">Oil shock risk</div>
+            <div class="badge bear">Risk assets fragile</div>
+            <div class="badge bull">XLE relative hedge</div>
+          </div>
+        </div>
+        <div class="bullet-box">
+          <h3>What matters next</h3>
+          <ul>
+            <li>Whether the U.S. keeps the pressure at military targets only, or starts hitting the oil handling infrastructure itself.</li>
+            <li>Whether Hormuz traffic normalizes, even partially. If not, the oil risk premium stays sticky.</li>
+            <li>Whether China and Asian buyers keep receiving Iranian barrels via Kharg or reroutes like Jask and smaller workaround channels.</li>
+            <li>Whether equities stabilize after the first panic leg down, or start another round of de-risking like a policy shock spiral.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Market translation</h2>
+          <div class="panel-sub">Simple view of what this means for positioning</div>
+        </div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Base case</div>
+          <div class="metric-value warn">Volatile standoff</div>
+          <div class="metric-note">Military pressure stays high, oil infra mostly spared, market trades headline risk</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Bear case</div>
+          <div class="metric-value bear">Supply shock</div>
+          <div class="metric-note">Kharg oil infra or wider Gulf export nodes get impaired, inflation shock deepens</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">SPY read</div>
+          <div class="metric-value bear">Risk-off</div>
+          <div class="metric-note">Broad market weakens when oil shock starts looking persistent</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Relative winner</div>
+          <div class="metric-value bull">Energy</div>
+          <div class="metric-note">XLE can hold better than broad beta, though not all energy names benefit equally</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticker-grid">
+      <div class="chart-section">
+        <div class="chart-header">
+          <div>
+            <h2>SPY</h2>
+            <div class="chart-desc">Broad market risk barometer</div>
+          </div>
+          <div class="chart-header-right">
+            <div class="chart-meta" id="spyMeta">—</div>
+          </div>
+        </div>
+        <div class="chart-watermark">
+          <div class="chart-watermark-ticker">SPY</div>
+          <div class="chart-watermark-brand">www.oqliv.com</div>
+        </div>
+        <div id="spyPrice" class="price-pane"></div>
+        <div id="spyVol" class="vol-pane"></div>
+        <div class="float-brand">www.oqliv.com</div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-header">
+          <div>
+            <h2>TSM</h2>
+            <div class="chart-desc">Semis proxy with Asia demand sensitivity</div>
+          </div>
+          <div class="chart-header-right">
+            <div class="chart-meta" id="tsmMeta">—</div>
+          </div>
+        </div>
+        <div class="chart-watermark">
+          <div class="chart-watermark-ticker">TSM</div>
+          <div class="chart-watermark-brand">www.oqliv.com</div>
+        </div>
+        <div id="tsmPrice" class="price-pane"></div>
+        <div id="tsmVol" class="vol-pane"></div>
+        <div class="float-brand">www.oqliv.com</div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-header">
+          <div>
+            <h2>XLE</h2>
+            <div class="chart-desc">Energy sector relative shelter</div>
+          </div>
+          <div class="chart-header-right">
+            <div class="chart-meta" id="xleMeta">—</div>
+          </div>
+        </div>
+        <div class="chart-watermark">
+          <div class="chart-watermark-ticker">XLE</div>
+          <div class="chart-watermark-brand">www.oqliv.com</div>
+        </div>
+        <div id="xlePrice" class="price-pane"></div>
+        <div id="xleVol" class="vol-pane"></div>
+        <div class="float-brand">www.oqliv.com</div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-header">
+          <div>
+            <h2>10Y Yield</h2>
+            <div class="chart-desc">Treasury yield stress gauge</div>
+          </div>
+          <div class="chart-header-right">
+            <div class="chart-meta" id="tnxMeta">—</div>
+          </div>
+        </div>
+        <div class="chart-watermark">
+          <div class="chart-watermark-ticker">^TNX</div>
+          <div class="chart-watermark-brand">www.oqliv.com</div>
+        </div>
+        <div id="tnxPrice" class="price-pane"></div>
+        <div id="tnxVol" class="vol-pane"></div>
+        <div class="float-brand">www.oqliv.com</div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-header">
+          <div>
+            <h2>DXY</h2>
+            <div class="chart-desc">Dollar stress and liquidity gauge</div>
+          </div>
+          <div class="chart-header-right">
+            <div class="chart-meta" id="dxyMeta">—</div>
+          </div>
+        </div>
+        <div class="chart-watermark">
+          <div class="chart-watermark-ticker">DX-Y.NYB</div>
+          <div class="chart-watermark-brand">www.oqliv.com</div>
+        </div>
+        <div id="dxyPrice" class="price-pane"></div>
+        <div id="dxyVol" class="vol-pane"></div>
+        <div class="float-brand">www.oqliv.com</div>
+      </div>
+
+      <div class="chart-section">
+        <div class="chart-header">
+          <div>
+            <h2>VIX</h2>
+            <div class="chart-desc">Equity fear gauge</div>
+          </div>
+          <div class="chart-header-right">
+            <div class="chart-meta" id="vixMeta">—</div>
+          </div>
+        </div>
+        <div class="chart-watermark">
+          <div class="chart-watermark-ticker">^VIX</div>
+          <div class="chart-watermark-brand">www.oqliv.com</div>
+        </div>
+        <div id="vixPrice" class="price-pane"></div>
+        <div id="vixVol" class="vol-pane"></div>
+        <div class="float-brand">www.oqliv.com</div>
+      </div>
+    </div>
+
+    <div class="small-note">
+      This page uses your OQLIV pattern-scan endpoint for chart structure. If an endpoint does not return data in preview, deploy the file on your domain or replace API_BASE.
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://oqliv.com';
+    const tickers = ['SPY', 'TSM', 'XLE', '^TNX', 'DX-Y.NYB', '^VIX'];
+    const charts = {};
+
+    function $(id) { return document.getElementById(id); }
+    function num(x) { const n = Number(x); return Number.isFinite(n) ? n : NaN; }
+    function fmtPrice(x) { const n = num(x); return Number.isFinite(n) ? '$' + n.toFixed(2) : '—'; }
+    function fmtPct(x, digits = 2) { const n = num(x); return Number.isFinite(n) ? n.toFixed(digits) + '%' : '—'; }
+    function toUTCTimestamp(dateLike) {
+      const d = (dateLike instanceof Date) ? dateLike : new Date(dateLike);
+      const t = Math.floor(d.getTime() / 1000);
+      return Number.isFinite(t) ? t : NaN;
+    }
+    function buildPatternScanUrl(ticker) {
+      const t = encodeURIComponent(ticker.trim().toUpperCase());
+      return `${API_BASE}/performance/api/json/pattern-scan?ticker=${t}&period=1y&interval=1d`;
+    }
+    async function fetchJSON(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error(`Bad JSON from ${url}`); }
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      return data;
+    }
+    function parseCandles(payload) {
+      const arr = payload?.candles || payload?.ohlc || payload?.bars || [];
+      return (arr || []).map(x => {
+        const time = toUTCTimestamp(x.t || x.time || x.date);
+        const open = num(x.o ?? x.open);
+        const high = num(x.h ?? x.high);
+        const low = num(x.l ?? x.low);
+        const close = num(x.c ?? x.close);
+        const volume = num(x.v ?? x.volume);
+        if (![time, open, high, low, close].every(Number.isFinite)) return null;
+        return { time, open, high, low, close, volume: Number.isFinite(volume) ? volume : null };
+      }).filter(Boolean);
+    }
+    function buildVolumeBars(candles) {
+      return candles.filter(c => c.volume != null).map(c => ({
+        time: c.time,
+        value: c.volume,
+        color: c.close >= c.open ? 'rgba(45,224,122,0.35)' : 'rgba(255,77,79,0.35)'
+      }));
+    }
+    function mapTimeValueSeries(rawSeries, fallbackCandles) {
+      if (!Array.isArray(rawSeries) || !rawSeries.length) return [];
+      if (typeof rawSeries[0] === 'object') {
+        return rawSeries.map(p => {
+          const time = toUTCTimestamp(p.time ?? p.t ?? p.date);
+          const value = num(p.value ?? p.y ?? p.price);
+          if (!Number.isFinite(time) || !Number.isFinite(value)) return null;
+          return { time, value };
+        }).filter(Boolean);
+      }
+      const values = rawSeries.map(num).filter(Number.isFinite);
+      const len = Math.min(values.length, fallbackCandles.length);
+      const candlesSlice = fallbackCandles.slice(fallbackCandles.length - len);
+      const valuesSlice = values.slice(values.length - len);
+      return valuesSlice.map((value, idx) => ({ time: candlesSlice[idx].time, value }));
+    }
+    function createPairedCharts(priceElId, volElId) {
+      const priceEl = $(priceElId);
+      const volEl = $(volElId);
+      const chart = LightweightCharts.createChart(priceEl, {
+        width: priceEl.clientWidth,
+        height: priceEl.clientHeight,
+        layout: { background: { type: 'solid', color: '#0a0a0a' }, textColor: '#e0e0e0' },
+        grid: { vertLines: { color: '#1f1f1f' }, horzLines: { color: '#1f1f1f' } },
+        rightPriceScale: { borderColor: '#1f1f1f' },
+        timeScale: { borderColor: '#1f1f1f', timeVisible: true },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+      });
+      const volChart = LightweightCharts.createChart(volEl, {
+        width: volEl.clientWidth,
+        height: volEl.clientHeight,
+        layout: { background: { type: 'solid', color: '#0a0a0a' }, textColor: 'rgba(224,224,224,0)' },
+        grid: { vertLines: { color: '#1f1f1f' }, horzLines: { color: '#1f1f1f' } },
+        rightPriceScale: { borderColor: '#1f1f1f' },
+        timeScale: { borderColor: '#1f1f1f', timeVisible: true }
+      });
+      volChart.priceScale('right').applyOptions({ visible: false });
+      const candleSeries = chart.addCandlestickSeries({
+        upColor: '#2de07a', downColor: '#ff4d4f', borderUpColor: '#2de07a', borderDownColor: '#ff4d4f', wickUpColor: '#2de07a', wickDownColor: '#ff4d4f'
+      });
+      const volSeries = volChart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: '', scaleMargins: { top: 0.92, bottom: 0 } });
+      const sync = () => {
+        const r = chart.timeScale().getVisibleLogicalRange();
+        if (r) volChart.timeScale().setVisibleLogicalRange(r);
+      };
+      chart.timeScale().subscribeVisibleLogicalRangeChange(sync);
+      const onResize = () => {
+        chart.applyOptions({ width: priceEl.clientWidth, height: priceEl.clientHeight });
+        volChart.applyOptions({ width: volEl.clientWidth, height: volEl.clientHeight });
+        sync();
+      };
+      window.addEventListener('resize', onResize);
+      return { chart, volChart, candleSeries, volSeries, cleanup: () => window.removeEventListener('resize', onResize) };
+    }
+    function addLine(chart, data, options) {
+      if (!data.length) return null;
+      const s = chart.addLineSeries({ crosshairMarkerVisible: false, priceLineVisible: false, lastValueVisible: true, ...options });
+      s.setData(data);
+      return s;
+    }
+    async function loadTicker(ticker) {
+      const keyMap = {
+        'SPY': 'spy',
+        'TSM': 'tsm',
+        'XLE': 'xle',
+        '^TNX': 'tnx',
+        'DX-Y.NYB': 'dxy',
+        '^VIX': 'vix'
+      };
+      const key = keyMap[ticker] || ticker.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const payload = await fetchJSON(buildPatternScanUrl(ticker));
+      const candles = parseCandles(payload);
+      if (!candles.length) throw new Error(`No candles for ${ticker}`);
+      const lr = payload?.linear_regression || {};
+      const lineSeries = mapTimeValueSeries(lr?.line?.series || lr?.line?.points || [], candles);
+      const resSeries = mapTimeValueSeries(lr?.resistance?.series || lr?.resistance?.points || [], candles);
+      const supSeries = mapTimeValueSeries(lr?.support?.series || lr?.support?.points || [], candles);
+      const chartPack = createPairedCharts(`${key}Price`, `${key}Vol`);
+      charts[key] = chartPack;
+      chartPack.candleSeries.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
+      chartPack.volSeries.setData(buildVolumeBars(candles));
+      addLine(chartPack.chart, lineSeries, { color: 'rgba(96,165,250,0.95)', lineWidth: 2 });
+      addLine(chartPack.chart, resSeries, { color: 'rgba(244,114,182,0.95)', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed });
+      addLine(chartPack.chart, supSeries, { color: 'rgba(45,224,122,0.95)', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed });
+      chartPack.chart.timeScale().fitContent();
+      chartPack.volChart.timeScale().fitContent();
+
+      const last = candles[candles.length - 1]?.close;
+      const first = candles[Math.max(0, candles.length - 126)]?.close;
+      const perf = (Number.isFinite(first) && first !== 0 && Number.isFinite(last)) ? ((last / first) - 1) * 100 : NaN;
+      const slope = num(lr?.line?.slope);
+      const direction = slope > 0 ? 'up' : slope < 0 ? 'down' : 'flat';
+      $(`${key}Meta`).textContent = `Last ${fmtPrice(last)} | ~6M ${fmtPct(perf)} | LR ${direction}`;
+      if (ticker === 'SPY') $('spyHeadline').textContent = fmtPrice(last);
+      return { ticker, last, perf, direction };
+    }
+
+    async function init() {
+      try {
+        $('status').textContent = 'Loading SPY, TSM, XLE, 10Y, DXY, and VIX...';
+        const results = await Promise.all(tickers.map(loadTicker));
+        $('status').textContent = 'Loaded SPY, TSM, XLE, 10Y, DXY, and VIX panels.';
+        console.log(results);
+      } catch (e) {
+        console.error(e);
+        $('status').textContent = `Load error: ${e.message}`;
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

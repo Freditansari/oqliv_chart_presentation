@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OQLIV Pattern Chart</title>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #0f172a;
+      --panel-2: #111827;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --grid: rgba(148, 163, 184, 0.12);
+      --green: #22c55e;
+      --red: #ef4444;
+      --purple: #d946ef;
+      --blue: #60a5fa;
+      --orange: #f59e0b;
+      --pink: #f472b6;
+      --border: rgba(148, 163, 184, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #08101d 0%, #0b1220 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.2px;
+    }
+
+    .title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .control {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .control label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    input, select, button {
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    input, select {
+      min-width: 80px;
+    }
+
+    button {
+      background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:hover { filter: brightness(1.08); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 14px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(17,24,39,0.98));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+    }
+
+    .chart-panel {
+      padding: 0;
+      position: relative;
+      min-height: 760px;
+    }
+
+    #chart {
+      width: 100%;
+      height: 760px;
+    }
+
+    .overlay {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      z-index: 5;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 420px;
+    }
+
+    .overlay-box {
+      background: rgba(11,18,32,0.72);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 14px;
+      padding: 12px 14px;
+      backdrop-filter: blur(10px);
+    }
+
+    .overlay-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .overlay-sub {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .overlay-pattern {
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    .sidebar {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(148,163,184,0.12);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--muted);
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(148,163,184,0.08);
+      font-size: 14px;
+    }
+
+    .row:last-child { border-bottom: 0; }
+    .label { color: var(--muted); }
+    .value { text-align: right; }
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .muted { color: var(--muted); }
+
+    .status {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 18px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(148,163,184,0.12);
+      color: var(--text);
+    }
+
+    @media (max-width: 1100px) {
+      .grid { grid-template-columns: 1fr; }
+      .chart-panel { min-height: 640px; }
+      #chart { height: 640px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">
+        <h1>OQLIV Pattern Chart</h1>
+        <p>Client-side pattern recognition with slanted trendlines.</p>
+      </div>
+
+      <div class="controls">
+        <div class="control">
+          <label for="ticker">Ticker</label>
+          <input id="ticker" value="TSM" />
+        </div>
+        <div class="control">
+          <label for="tf">TF</label>
+          <select id="tf">
+            <option value="d" selected>Daily</option>
+            <option value="w">Weekly</option>
+            <option value="m">Monthly</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="period">Period</label>
+          <select id="period">
+            <option value="1y" selected>1Y</option>
+            <option value="2y">2Y</option>
+            <option value="5y">5Y</option>
+            <option value="10y">10Y</option>
+            <option value="max">MAX</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="bars">Bars</label>
+          <input id="bars" type="number" min="60" max="600" value="220" />
+        </div>
+        <button id="loadBtn">Load</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel chart-panel">
+        <div class="overlay">
+          <div class="overlay-box">
+            <div class="overlay-title" id="overlayTitle">TSM — Daily</div>
+            <div class="overlay-sub" id="overlaySub">Loading…</div>
+            <div class="overlay-pattern" id="overlayPattern">Pattern: —</div>
+          </div>
+        </div>
+        <div id="chart"></div>
+      </div>
+
+      <div class="panel sidebar">
+        <div class="card">
+          <h3>State</h3>
+          <div class="row"><div class="label">Trend</div><div class="value" id="trendState">—</div></div>
+          <div class="row"><div class="label">Primary Pattern</div><div class="value" id="primaryPattern">—</div></div>
+          <div class="row"><div class="label">Support</div><div class="value" id="supportVal">—</div></div>
+          <div class="row"><div class="label">Resistance</div><div class="value" id="resistanceVal">—</div></div>
+          <div class="row"><div class="label">Last Price</div><div class="value" id="lastPriceVal">—</div></div>
+        </div>
+
+        <div class="card">
+          <h3>Performance</h3>
+          <div id="perfBox"></div>
+        </div>
+
+        <div class="card">
+          <h3>Active Overlays</h3>
+          <div class="chips" id="activePatternsBox"></div>
+        </div>
+
+        <div class="card">
+          <h3>Status</h3>
+          <div class="status" id="status">Ready.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- 'https://oqliv.com/performance/api/json/pattern-scan' -->
+<script>
+  const endpointBase = 'https://oqliv.com/performance/api/json/pattern-scan';
+
+  const chartEl = document.getElementById('chart');
+  const overlayTitle = document.getElementById('overlayTitle');
+  const overlaySub = document.getElementById('overlaySub');
+  const overlayPattern = document.getElementById('overlayPattern');
+  const trendState = document.getElementById('trendState');
+  const primaryPatternEl = document.getElementById('primaryPattern');
+  const supportVal = document.getElementById('supportVal');
+  const resistanceVal = document.getElementById('resistanceVal');
+  const lastPriceVal = document.getElementById('lastPriceVal');
+  const perfBox = document.getElementById('perfBox');
+  const activePatternsBox = document.getElementById('activePatternsBox');
+  const statusEl = document.getElementById('status');
+
+  const tickerInput = document.getElementById('ticker');
+  const tfSelect = document.getElementById('tf');
+  const periodSelect = document.getElementById('period');
+  const barsInput = document.getElementById('bars');
+  const loadBtn = document.getElementById('loadBtn');
+
+  let chart;
+  let candleSeries;
+  let volumeSeries;
+  let sma20Series;
+  let sma50Series;
+  let sma200Series;
+  let overlaySeries = [];
+  let currentMarkers = [];
+
+  function createChart() {
+    if (chart) chart.remove();
+
+    chart = LightweightCharts.createChart(chartEl, {
+      width: chartEl.clientWidth,
+      height: chartEl.clientHeight,
+      layout: {
+        background: { color: '#0f172a' },
+        textColor: '#cbd5e1',
+        attributionLogo: false,
+      },
+      grid: {
+        vertLines: { color: 'rgba(148,163,184,0.08)' },
+        horzLines: { color: 'rgba(148,163,184,0.08)' },
+      },
+      crosshair: {
+        mode: LightweightCharts.CrosshairMode.Normal,
+      },
+      rightPriceScale: {
+        borderColor: 'rgba(148,163,184,0.14)',
+      },
+      timeScale: {
+        borderColor: 'rgba(148,163,184,0.14)',
+        timeVisible: true,
+      },
+    });
+
+    candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+      upColor: '#22c55e',
+      downColor: '#ef4444',
+      borderVisible: false,
+      wickUpColor: '#cbd5e1',
+      wickDownColor: '#cbd5e1',
+    });
+
+    volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+      priceFormat: { type: 'volume' },
+      priceScaleId: '',
+    });
+    volumeSeries.priceScale().applyOptions({
+      scaleMargins: { top: 0.80, bottom: 0 },
+    });
+
+    sma20Series = chart.addSeries(LightweightCharts.LineSeries, {
+      color: '#a855f7',
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    sma50Series = chart.addSeries(LightweightCharts.LineSeries, {
+      color: '#f59e0b',
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    sma200Series = chart.addSeries(LightweightCharts.LineSeries, {
+      color: '#64748b',
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    window.addEventListener('resize', resizeChart, { passive: true });
+  }
+
+  function resizeChart() {
+    if (!chart) return;
+    chart.applyOptions({
+      width: chartEl.clientWidth,
+      height: chartEl.clientHeight,
+    });
+  }
+
+  function applyMarkers(markers) {
+    currentMarkers = markers || [];
+
+    if (!candleSeries) return;
+
+    if (typeof LightweightCharts.createSeriesMarkers === 'function') {
+      LightweightCharts.createSeriesMarkers(candleSeries, currentMarkers);
+      return;
+    }
+
+    if (typeof candleSeries.setMarkers === 'function') {
+      candleSeries.setMarkers(currentMarkers);
+      return;
+    }
+
+    console.warn('No supported marker API found in this LightweightCharts version.');
+  }
+
+  function clearOverlays() {
+    if (!chart) return;
+
+    for (const s of overlaySeries) {
+      try {
+        chart.removeSeries(s);
+      } catch (e) {}
+    }
+
+    overlaySeries = [];
+    applyMarkers([]);
+  }
+
+  function sma(values, n) {
+    const out = [];
+    let sum = 0;
+    for (let i = 0; i < values.length; i++) {
+      sum += values[i];
+      if (i >= n) sum -= values[i - n];
+      out.push(i >= n - 1 ? sum / n : null);
+    }
+    return out;
+  }
+
+  function lineSeries(color, width = 2, style = LightweightCharts.LineStyle.Solid) {
+    const s = chart.addSeries(LightweightCharts.LineSeries, {
+      color,
+      lineWidth: width,
+      lineStyle: style,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+    overlaySeries.push(s);
+    return s;
+  }
+
+  function extendTime(times, idx, plus = 8) {
+    const safeIdx = Math.min(idx, times.length - 1);
+    const curr = new Date(times[safeIdx] + 'T00:00:00Z');
+    const prev = safeIdx > 0 ? new Date(times[safeIdx - 1] + 'T00:00:00Z') : null;
+    const stepMs = prev ? Math.max(24 * 3600 * 1000, curr - prev) : 24 * 3600 * 1000;
+    return Math.floor((curr.getTime() + plus * stepMs) / 1000);
+  }
+
+  // 4 highest raw highs inside lookback window
+  function findTop4Highs(bars, lookback = 100) {
+    const endIdx = bars.length - 1;
+    const startIdx = Math.max(0, endIdx - lookback + 1);
+    const recentBars = bars.slice(startIdx);
+
+    const highs = recentBars.map((bar, i) => ({
+      idx: startIdx + i,
+      price: Number(bar.high),
+      time: bar.time,
+    }));
+
+    highs.sort((a, b) => b.price - a.price);
+    const top4 = highs.slice(0, 4);
+
+    // sort selected points by age/time
+    top4.sort((a, b) => a.idx - b.idx);
+    return top4;
+  }
+
+  // 4 lowest raw lows inside lookback window
+  function findBottom4Lows(bars, lookback = 100) {
+    const endIdx = bars.length - 1;
+    const startIdx = Math.max(0, endIdx - lookback + 1);
+    const recentBars = bars.slice(startIdx);
+
+    const lows = recentBars.map((bar, i) => ({
+      idx: startIdx + i,
+      price: Number(bar.low),
+      time: bar.time,
+    }));
+
+    lows.sort((a, b) => a.price - b.price);
+    const bottom4 = lows.slice(0, 4);
+
+    // sort selected points by age/time
+    bottom4.sort((a, b) => a.idx - b.idx);
+    return bottom4;
+  }
+
+  function projectLinePoint(p1, p2, targetIdx) {
+    const dx = p2.idx - p1.idx;
+    const slope = dx === 0 ? 0 : (p2.price - p1.price) / dx;
+    return p2.price + slope * (targetIdx - p2.idx);
+  }
+
+  function drawConnectedLines(bars, topPoints, bottomPoints) {
+    const times = bars.map(b => b.time);
+    const endIdx = bars.length - 1;
+    const projectedSteps = 15;
+    const futureTime = extendTime(times, endIdx, projectedSteps);
+    const allMarkers = [];
+
+    // Take 4 highest highs -> drop 2 oldest -> draw using newest 2
+    if (topPoints.length >= 4) {
+      const keptTop = topPoints.slice(2);
+
+      if (keptTop.length >= 2) {
+        const p1 = keptTop[0];
+        const p2 = keptTop[1];
+        const projectedValue = projectLinePoint(p1, p2, endIdx + projectedSteps);
+
+        const topLine = lineSeries('#ef4444', 3, LightweightCharts.LineStyle.Solid);
+        topLine.setData([
+          { time: p1.time, value: p1.price },
+          { time: p2.time, value: p2.price },
+          { time: futureTime, value: projectedValue },
+        ]);
+      }
+
+      topPoints.forEach((point, idx) => {
+        allMarkers.push({
+          time: point.time,
+          position: 'aboveBar',
+          color: idx < 2 ? '#64748b' : '#ef4444',
+          shape: 'circle',
+          text: `H${idx + 1}`,
+        });
+      });
+    }
+
+    // Take 4 lowest lows -> drop 2 oldest -> draw using newest 2
+    if (bottomPoints.length >= 4) {
+      const keptBottom = bottomPoints.slice(2);
+
+      if (keptBottom.length >= 2) {
+        const p1 = keptBottom[0];
+        const p2 = keptBottom[1];
+        const projectedValue = projectLinePoint(p1, p2, endIdx + projectedSteps);
+
+        const bottomLine = lineSeries('#22c55e', 3, LightweightCharts.LineStyle.Solid);
+        bottomLine.setData([
+          { time: p1.time, value: p1.price },
+          { time: p2.time, value: p2.price },
+          { time: futureTime, value: projectedValue },
+        ]);
+      }
+
+      bottomPoints.forEach((point, idx) => {
+        allMarkers.push({
+          time: point.time,
+          position: 'belowBar',
+          color: idx < 2 ? '#64748b' : '#22c55e',
+          shape: 'circle',
+          text: `L${idx + 1}`,
+        });
+      });
+    }
+
+    applyMarkers(allMarkers);
+  }
+
+  function setSeriesData(scan) {
+    const candles = scan.candles || [];
+
+    candleSeries.setData(
+      candles.map(b => ({
+        time: b.t,
+        open: b.o,
+        high: b.h,
+        low: b.l,
+        close: b.c,
+      }))
+    );
+
+    volumeSeries.setData(
+      candles.map(b => ({
+        time: b.t,
+        value: b.v,
+        color: b.c >= b.o ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)',
+      }))
+    );
+
+    const closes = candles.map(b => b.c);
+    const s20 = sma(closes, 20);
+    const s50 = sma(closes, 50);
+    const s200 = sma(closes, 200);
+
+    sma20Series.setData(
+      candles
+        .map((b, i) => (s20[i] == null ? null : { time: b.t, value: s20[i] }))
+        .filter(Boolean)
+    );
+
+    sma50Series.setData(
+      candles
+        .map((b, i) => (s50[i] == null ? null : { time: b.t, value: s50[i] }))
+        .filter(Boolean)
+    );
+
+    sma200Series.setData(
+      candles
+        .map((b, i) => (s200[i] == null ? null : { time: b.t, value: s200[i] }))
+        .filter(Boolean)
+    );
+
+    chart.timeScale().fitContent();
+  }
+
+  function perfSnapshot(bars) {
+    const closes = bars.map(b => b.close);
+    const last = closes[closes.length - 1];
+
+    function pctAgo(n) {
+      if (closes.length <= n) return null;
+      const base = closes[closes.length - 1 - n];
+      if (!base) return null;
+      return (last / base - 1) * 100;
+    }
+
+    return {
+      '1D': pctAgo(1),
+      '5D': pctAgo(5),
+      '1M': pctAgo(21),
+      '3M': pctAgo(63),
+      '6M': pctAgo(126),
+      '12M': pctAgo(252),
+      '3Y': pctAgo(756),
+      '10Y': pctAgo(2520),
+    };
+  }
+
+  function fmtPct(v) {
+    if (v == null || Number.isNaN(v)) return 'n/a';
+    return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
+  }
+
+  function renderSidebar(scan, barsData, topPoints, bottomPoints) {
+    const closes = barsData.map(b => b.close);
+    const s50 = sma(closes, 50);
+    const s200 = sma(closes, 200);
+    const last = closes[closes.length - 1];
+    const sma50Val = s50[s50.length - 1];
+    const sma200Val = s200[s200.length - 1];
+
+    let trend = 'unknown';
+    if (sma50Val && sma200Val) {
+      if (last > sma50Val && sma50Val > sma200Val) trend = 'uptrend';
+      else if (last < sma50Val && sma50Val < sma200Val) trend = 'downtrend';
+      else trend = 'range/mixed';
+    }
+
+    trendState.textContent = trend;
+    primaryPatternEl.textContent =
+      topPoints.length >= 4 || bottomPoints.length >= 4
+        ? '4 extremes -> drop 2 oldest -> draw newest 2'
+        : 'none';
+
+    supportVal.textContent =
+      bottomPoints.length >= 4
+        ? bottomPoints[3].price.toFixed(2)
+        : bottomPoints.length
+          ? bottomPoints[bottomPoints.length - 1].price.toFixed(2)
+          : '—';
+
+    resistanceVal.textContent =
+      topPoints.length >= 4
+        ? topPoints[3].price.toFixed(2)
+        : topPoints.length
+          ? topPoints[topPoints.length - 1].price.toFixed(2)
+          : '—';
+
+    lastPriceVal.textContent = Number(last).toFixed(2);
+
+    const perf = perfSnapshot(barsData);
+    perfBox.innerHTML = '';
+    for (const [k, v] of Object.entries(perf)) {
+      const div = document.createElement('div');
+      div.className = 'row';
+      const cls = v == null ? 'muted' : v >= 0 ? 'green' : 'red';
+      div.innerHTML = `<div class="label">${k}</div><div class="value ${cls}">${fmtPct(v)}</div>`;
+      perfBox.appendChild(div);
+    }
+
+    activePatternsBox.innerHTML = '';
+
+    const chipData = [];
+    if (topPoints.length) {
+      chipData.push(...topPoints.map((point, i) => `H${i + 1}: ${point.price.toFixed(2)}`));
+    }
+    if (bottomPoints.length) {
+      chipData.push(...bottomPoints.map((point, i) => `L${i + 1}: ${point.price.toFixed(2)}`));
+    }
+
+    if (chipData.length === 0) {
+      activePatternsBox.innerHTML = '<div class="chip">No datapoints detected</div>';
+    } else {
+      chipData.forEach(text => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = text;
+        activePatternsBox.appendChild(chip);
+      });
+    }
+  }
+
+  function renderHeader(ticker, tf, scan, barsData) {
+    const tfLabel = scan.tf_label || (tf === 'd' ? 'Daily' : tf === 'w' ? 'Weekly' : 'Monthly');
+    const last = Number(barsData[barsData.length - 1].close);
+
+    overlayTitle.textContent = `${ticker} — ${tfLabel}`;
+    overlaySub.textContent = `As of ${scan.asof || ''} · Close ${last.toFixed(2)}`;
+    overlayPattern.textContent = 'Pattern: 4 highest highs + 4 lowest lows, drop 2 oldest, draw newest 2';
+  }
+
+  async function loadChart() {
+    const ticker = tickerInput.value.trim().toUpperCase() || 'TSM';
+    const tf = tfSelect.value;
+    const period = periodSelect.value;
+    const bars = Number(barsInput.value || 220);
+
+    statusEl.textContent = 'Loading data…';
+    clearOverlays();
+
+    try {
+      const url = `${endpointBase}?ticker=${encodeURIComponent(ticker)}&tf=${encodeURIComponent(tf)}&period=${encodeURIComponent(period)}&bars=${encodeURIComponent(bars)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const scan = await res.json();
+      if (!scan.candles || !Array.isArray(scan.candles) || !scan.candles.length) {
+        throw new Error('No candles returned.');
+      }
+
+      const barsData = scan.candles.map(x => ({
+        time: x.t,
+        open: x.o,
+        high: x.h,
+        low: x.l,
+        close: x.c,
+        volume: x.v,
+      }));
+
+      setSeriesData(scan);
+
+      const topPoints = findTop4Highs(barsData, 100);
+      const bottomPoints = findBottom4Lows(barsData, 100);
+
+      drawConnectedLines(barsData, topPoints, bottomPoints);
+      renderSidebar(scan, barsData, topPoints, bottomPoints);
+      renderHeader(ticker, tf, scan, barsData);
+
+      statusEl.textContent =
+        `Loaded ${ticker} with ${barsData.length} bars. ` +
+        `Top highs: ${topPoints.length}. Bottom lows: ${bottomPoints.length}. ` +
+        `Dropped 2 oldest from each side before drawing.`;
+    } catch (err) {
+      console.error('loadChart failed:', err);
+      statusEl.textContent = `Error: ${err.message}`;
+      overlaySub.textContent = 'Failed to load.';
+      overlayPattern.textContent = 'Pattern: —';
+      primaryPatternEl.textContent = 'none';
+      supportVal.textContent = '—';
+      resistanceVal.textContent = '—';
+      lastPriceVal.textContent = '—';
+      activePatternsBox.innerHTML = '';
+      perfBox.innerHTML = '';
+      applyMarkers([]);
+    }
+  }
+
+  loadBtn.addEventListener('click', loadChart);
+  tickerInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loadChart();
+  });
+
+  createChart();
+  loadChart();
+</script>
+</body>
+</html>

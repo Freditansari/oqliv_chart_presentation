@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OQLIV Infographic Maker</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root{
+      --bg: #0a0a0a;
+      --panel: #141414;
+      --panel-2: #101010;
+      --border: #1f1f1f;
+      --text: #e0e0e0;
+      --muted: #8b8b8b;
+      --muted-2: #666;
+      --accent: #ff6b35;
+      --accent-2: #ff8c42;
+      --bull: #2de07a;
+      --bear: #ff4d4f;
+      --radius: 18px;
+    }
+
+    body{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(255,107,53,0.08), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(255,255,255,0.03), transparent 18%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .app{
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel{
+      background: rgba(20,20,20,0.95);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 20px;
+      position: sticky;
+      top: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+
+    .panel h1{
+      font-size: 1.4rem;
+      line-height: 1.1;
+      color: #fff;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .panel .sub{
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    .field{
+      margin-bottom: 14px;
+    }
+
+    .field label{
+      display: block;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    input[type="text"],
+    textarea,
+    select{
+      width: 100%;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font: inherit;
+      outline: none;
+    }
+
+    textarea{
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus{
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255,107,53,0.12);
+    }
+
+    .grid-2{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .row{
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn{
+      appearance: none;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.92rem;
+      transition: 0.18s ease;
+    }
+
+    .btn-primary{
+      background: var(--accent);
+      color: #0a0a0a;
+    }
+
+    .btn-primary:hover{ background: var(--accent-2); }
+
+    .btn-secondary{
+      background: transparent;
+      color: var(--text);
+      border: 1px solid #2a2a2a;
+    }
+
+    .btn-secondary:hover{
+      border-color: var(--accent);
+      color: #fff;
+      background: rgba(255,107,53,0.06);
+    }
+
+    .hint{
+      margin-top: 12px;
+      color: var(--muted-2);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .stage-wrap{
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
+    .phone-frame{
+      background: #050505;
+      border: 1px solid #1c1c1c;
+      border-radius: 28px;
+      padding: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    /* 9:16 reel / tiktok canvas */
+    .poster{
+      width: 540px;
+      aspect-ratio: 9 / 16;
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(255,107,53,0.18), transparent 22%),
+        radial-gradient(circle at 0% 100%, rgba(255,255,255,0.04), transparent 18%),
+        linear-gradient(180deg, #111111 0%, #0a0a0a 100%);
+      border: 1px solid #242424;
+    }
+
+    .noise{
+      position: absolute;
+      inset: 0;
+      opacity: 0.06;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,1), rgba(0,0,0,0.35));
+      pointer-events: none;
+    }
+
+    .glow-line{
+      position: absolute;
+      left: -10%;
+      right: -10%;
+      top: 18%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,107,53,0.5), transparent);
+      transform: rotate(-7deg);
+      opacity: 0.7;
+    }
+
+    .glow-line.two{
+      top: auto;
+      bottom: 24%;
+      transform: rotate(8deg);
+      opacity: 0.35;
+    }
+
+    .poster-inner{
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      padding: 34px 30px 28px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      gap: 14px;
+    }
+
+    .badge{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,107,53,0.1);
+      border: 1px solid rgba(255,107,53,0.18);
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .dot{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 14px rgba(255,107,53,0.8);
+    }
+
+    .source{
+      font-size: 0.74rem;
+      color: var(--muted);
+      text-align: right;
+      line-height: 1.35;
+    }
+
+    .headline{
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      margin-top: 8px;
+      white-space: pre-line;
+      text-wrap: balance;
+    }
+
+    .headline.size-sm{ font-size: 2.25rem; }
+    .headline.size-md{ font-size: 2.75rem; }
+    .headline.size-lg{ font-size: 3.3rem; }
+    .headline.size-xl{ font-size: 4rem; }
+
+    .accent-bar{
+      width: 86px;
+      height: 5px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      margin: 22px 0 18px;
+      box-shadow: 0 0 25px rgba(255,107,53,0.25);
+    }
+
+    .body-wrap{
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+      flex: 1;
+    }
+
+    .body{
+      font-size: 1.14rem;
+      line-height: 1.5;
+      color: #d6d6d6;
+      white-space: pre-line;
+      text-wrap: pretty;
+    }
+
+    .body.bullets .line{
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .bullet-mark{
+      flex: 0 0 auto;
+      width: 9px;
+      height: 9px;
+      margin-top: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 14px rgba(255,107,53,0.5);
+    }
+
+    .bullet-text{
+      flex: 1;
+      color: #d6d6d6;
+      font-size: 1.08rem;
+      line-height: 1.45;
+    }
+
+    .footer{
+      margin-top: auto;
+      padding-top: 20px;
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .brand{
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .brand-label{
+      color: #fff;
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .brand-url{
+      color: rgba(224,224,224,0.72);
+      font-size: 0.88rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    .corner-tag{
+      font-size: 0.72rem;
+      color: rgba(224,224,224,0.55);
+      text-align: right;
+      line-height: 1.35;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .watermark{
+      position: absolute;
+      right: 20px;
+      bottom: 18px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.14);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      user-select: none;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .theme-red .badge,
+    .theme-red .bullet-mark,
+    .theme-red .dot{
+      background: #ff6b35;
+    }
+    .theme-red .accent-bar{
+      background: linear-gradient(90deg, #ff6b35, #ff8c42);
+    }
+
+    .theme-green .badge,
+    .theme-green .bullet-mark,
+    .theme-green .dot{
+      background: #2de07a;
+      box-shadow: 0 0 14px rgba(45,224,122,0.55);
+    }
+    .theme-green .accent-bar{
+      background: linear-gradient(90deg, #2de07a, #84f2b0);
+      box-shadow: 0 0 25px rgba(45,224,122,0.18);
+    }
+    .theme-green .badge{
+      background: rgba(45,224,122,0.1);
+      border-color: rgba(45,224,122,0.18);
+    }
+
+    .theme-blue .badge,
+    .theme-blue .bullet-mark,
+    .theme-blue .dot{
+      background: #4ea1ff;
+      box-shadow: 0 0 14px rgba(78,161,255,0.55);
+    }
+    .theme-blue .accent-bar{
+      background: linear-gradient(90deg, #4ea1ff, #8bc2ff);
+      box-shadow: 0 0 25px rgba(78,161,255,0.18);
+    }
+    .theme-blue .badge{
+      background: rgba(78,161,255,0.1);
+      border-color: rgba(78,161,255,0.18);
+    }
+
+    @media (max-width: 1150px){
+      .app{
+        grid-template-columns: 1fr;
+      }
+      .panel{
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px){
+      body{ padding: 14px; }
+      .phone-frame{ padding: 10px; width: 100%; }
+      .poster{ width: min(100%, 540px); }
+      .grid-2{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <h1>OQLIV Infographic Maker</h1>
+      <p class="sub">9:16 editor for IG Reels and TikTok. Change the text, theme, label, source, and export it as PNG.</p>
+
+      <div class="field">
+        <label for="labelInput">Top label</label>
+        <input id="labelInput" type="text" value="MARKET UPDATE" />
+      </div>
+
+      <div class="field">
+        <label for="headlineInput">Headline</label>
+        <textarea id="headlineInput">Oil Is Pressuring Markets,
+But Some Stocks
+Still Hold Strong</textarea>
+      </div>
+
+      <div class="field">
+        <label for="bodyInput">Body text</label>
+        <textarea id="bodyInput">• Oil remains elevated and keeps pressure on broader risk assets.
+• Some leadership names are still holding trend and relative strength.
+• Traders should separate market weakness from stocks that are still acting well.</textarea>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="sourceInput">Source / note</label>
+          <input id="sourceInput" type="text" value="Source: OQLIV" />
+        </div>
+
+        <div class="field">
+          <label for="dateInput">Date / tag</label>
+          <input id="dateInput" type="text" value="March 2026" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="themeSelect">Theme</label>
+          <select id="themeSelect">
+            <option value="theme-red">Orange</option>
+            <option value="theme-green">Green</option>
+            <option value="theme-blue">Blue</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="headlineSizeSelect">Headline size</label>
+          <select id="headlineSizeSelect">
+            <option value="size-sm">Small</option>
+            <option value="size-md" selected>Medium</option>
+            <option value="size-lg">Large</option>
+            <option value="size-xl">XL</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="brandingInput">Branding</label>
+          <input id="brandingInput" type="text" value="www.oqliv.com" />
+        </div>
+
+        <div class="field">
+          <label for="bodyModeSelect">Body mode</label>
+          <select id="bodyModeSelect">
+            <option value="bullets" selected>Bullets</option>
+            <option value="paragraph">Paragraph</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="btn btn-primary" id="downloadBtn">Download PNG</button>
+        <button class="btn btn-secondary" id="resetBtn">Reset Sample</button>
+      </div>
+
+      <div class="hint">
+        Use line breaks in headline and body.  
+        For bullets, start each line with "•" or just put one point per line.
+      </div>
+    </aside>
+
+    <div class="stage-wrap">
+      <div class="phone-frame">
+        <div id="poster" class="poster theme-red">
+          <div class="noise"></div>
+          <div class="glow-line"></div>
+          <div class="glow-line two"></div>
+
+          <div class="poster-inner">
+            <div class="topbar">
+              <div id="badge" class="badge">
+                <span class="dot"></span>
+                <span id="badgeText">MARKET UPDATE</span>
+              </div>
+
+              <div class="source">
+                <div id="sourceText">Source: OQLIV</div>
+                <div id="dateText">March 2026</div>
+              </div>
+            </div>
+
+            <div id="headline" class="headline size-md">Oil Is Pressuring Markets,
+But Some Stocks
+Still Hold Strong</div>
+
+            <div class="accent-bar"></div>
+
+            <div class="body-wrap">
+              <div id="bodyParagraph" class="body" style="display:none;"></div>
+              <div id="bodyBullets" class="body bullets"></div>
+            </div>
+
+            <div class="footer">
+              <div class="brand">
+                <div class="brand-label">OQLIV</div>
+                <div id="brandUrl" class="brand-url">www.oqliv.com</div>
+              </div>
+
+              <div class="corner-tag">
+                Vertical infographic<br />
+                Reel / TikTok format
+              </div>
+            </div>
+          </div>
+
+          <div id="watermark" class="watermark">www.oqliv.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const els = {
+      labelInput: document.getElementById('labelInput'),
+      headlineInput: document.getElementById('headlineInput'),
+      bodyInput: document.getElementById('bodyInput'),
+      sourceInput: document.getElementById('sourceInput'),
+      dateInput: document.getElementById('dateInput'),
+      themeSelect: document.getElementById('themeSelect'),
+      headlineSizeSelect: document.getElementById('headlineSizeSelect'),
+      brandingInput: document.getElementById('brandingInput'),
+      bodyModeSelect: document.getElementById('bodyModeSelect'),
+      downloadBtn: document.getElementById('downloadBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+
+      poster: document.getElementById('poster'),
+      badgeText: document.getElementById('badgeText'),
+      headline: document.getElementById('headline'),
+      sourceText: document.getElementById('sourceText'),
+      dateText: document.getElementById('dateText'),
+      bodyParagraph: document.getElementById('bodyParagraph'),
+      bodyBullets: document.getElementById('bodyBullets'),
+      brandUrl: document.getElementById('brandUrl'),
+      watermark: document.getElementById('watermark')
+    };
+
+    const sampleState = {
+      label: 'MARKET UPDATE',
+      headline: 'Oil Is Pressuring Markets,\nBut Some Stocks\nStill Hold Strong',
+      body: '• Oil remains elevated and keeps pressure on broader risk assets.\n• Some leadership names are still holding trend and relative strength.\n• Traders should separate market weakness from stocks that are still acting well.',
+      source: 'Source: OQLIV',
+      date: 'March 2026',
+      theme: 'theme-red',
+      headlineSize: 'size-md',
+      branding: 'www.oqliv.com',
+      bodyMode: 'bullets'
+    };
+
+    function escapeHTML(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function getLines(text) {
+      return String(text)
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+    }
+
+    function renderBullets(text) {
+      const lines = getLines(text);
+      if (!lines.length) {
+        els.bodyBullets.innerHTML = '';
+        return;
+      }
+
+      els.bodyBullets.innerHTML = lines.map(line => {
+        const clean = line.replace(/^•\s*/, '');
+        return `
+          <div class="line">
+            <span class="bullet-mark"></span>
+            <div class="bullet-text">${escapeHTML(clean)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updatePoster() {
+      const label = els.labelInput.value.trim() || 'MARKET UPDATE';
+      const headline = els.headlineInput.value.trim() || 'Your headline here';
+      const body = els.bodyInput.value.trim() || 'Your body text here';
+      const source = els.sourceInput.value.trim() || 'Source: OQLIV';
+      const date = els.dateInput.value.trim() || '';
+      const theme = els.themeSelect.value;
+      const headlineSize = els.headlineSizeSelect.value;
+      const branding = els.brandingInput.value.trim() || 'www.oqliv.com';
+      const bodyMode = els.bodyModeSelect.value;
+
+      els.badgeText.textContent = label;
+      els.headline.textContent = headline;
+      els.sourceText.textContent = source;
+      els.dateText.textContent = date;
+      els.brandUrl.textContent = branding;
+      els.watermark.textContent = branding;
+
+      els.poster.className = `poster ${theme}`;
+      els.headline.className = `headline ${headlineSize}`;
+
+      if (bodyMode === 'paragraph') {
+        els.bodyParagraph.style.display = 'block';
+        els.bodyBullets.style.display = 'none';
+        els.bodyParagraph.textContent = body;
+      } else {
+        els.bodyParagraph.style.display = 'none';
+        els.bodyBullets.style.display = 'block';
+        renderBullets(body);
+      }
+    }
+
+    function resetSample() {
+      els.labelInput.value = sampleState.label;
+      els.headlineInput.value = sampleState.headline;
+      els.bodyInput.value = sampleState.body;
+      els.sourceInput.value = sampleState.source;
+      els.dateInput.value = sampleState.date;
+      els.themeSelect.value = sampleState.theme;
+      els.headlineSizeSelect.value = sampleState.headlineSize;
+      els.brandingInput.value = sampleState.branding;
+      els.bodyModeSelect.value = sampleState.bodyMode;
+      updatePoster();
+    }
+
+    async function downloadPoster() {
+      const btn = els.downloadBtn;
+      const original = btn.textContent;
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Rendering...';
+
+        const canvas = await html2canvas(els.poster, {
+          backgroundColor: null,
+          scale: 2,
+          useCORS: true
+        });
+
+        const link = document.createElement('a');
+        link.download = 'oqliv-infographic-9x16.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        console.error(err);
+        alert('Failed to export image.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+
+    [
+      els.labelInput,
+      els.headlineInput,
+      els.bodyInput,
+      els.sourceInput,
+      els.dateInput,
+      els.themeSelect,
+      els.headlineSizeSelect,
+      els.brandingInput,
+      els.bodyModeSelect
+    ].forEach(el => {
+      el.addEventListener('input', updatePoster);
+      el.addEventListener('change', updatePoster);
+    });
+
+    els.downloadBtn.addEventListener('click', downloadPoster);
+    els.resetBtn.addEventListener('click', resetSample);
+
+    updatePoster();
+  </script>
+</body>
+</html>

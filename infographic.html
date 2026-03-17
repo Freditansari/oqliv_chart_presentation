@@ -20,8 +20,6 @@
       --muted-2: #666;
       --accent: #ff6b35;
       --accent-2: #ff8c42;
-      --bull: #2de07a;
-      --bear: #ff4d4f;
       --radius: 18px;
     }
 
@@ -174,7 +172,6 @@
       box-shadow: 0 20px 60px rgba(0,0,0,0.35);
     }
 
-    /* 9:16 reel / tiktok canvas */
     .poster{
       width: 540px;
       aspect-ratio: 9 / 16;
@@ -513,12 +510,11 @@ Still Hold Strong</textarea>
 
       <div class="row">
         <button class="btn btn-primary" id="downloadBtn">Download PNG</button>
-        <button class="btn btn-secondary" id="resetBtn">Reset Sample</button>
+        <button class="btn btn-secondary" id="clearBtn">Clear</button>
       </div>
 
       <div class="hint">
-        Use line breaks in headline and body.  
-        For bullets, start each line with "•" or just put one point per line.
+        Use line breaks in headline and body. For bullets, start each line with "•" or just put one point per line.
       </div>
     </aside>
 
@@ -548,7 +544,7 @@ Still Hold Strong</div>
 
             <div class="accent-bar"></div>
 
-            <div class="body-wrap">
+            <div class="body-wrap" id="bodyWrap">
               <div id="bodyParagraph" class="body" style="display:none;"></div>
               <div id="bodyBullets" class="body bullets"></div>
             </div>
@@ -560,7 +556,8 @@ Still Hold Strong</div>
               </div>
 
               <div class="corner-tag">
-                
+                Vertical infographic<br />
+                Reel / TikTok format
               </div>
             </div>
           </div>
@@ -583,29 +580,18 @@ Still Hold Strong</div>
       brandingInput: document.getElementById('brandingInput'),
       bodyModeSelect: document.getElementById('bodyModeSelect'),
       downloadBtn: document.getElementById('downloadBtn'),
-      resetBtn: document.getElementById('resetBtn'),
+      clearBtn: document.getElementById('clearBtn'),
 
       poster: document.getElementById('poster'),
       badgeText: document.getElementById('badgeText'),
       headline: document.getElementById('headline'),
       sourceText: document.getElementById('sourceText'),
       dateText: document.getElementById('dateText'),
+      bodyWrap: document.getElementById('bodyWrap'),
       bodyParagraph: document.getElementById('bodyParagraph'),
       bodyBullets: document.getElementById('bodyBullets'),
       brandUrl: document.getElementById('brandUrl'),
       watermark: document.getElementById('watermark')
-    };
-
-    const sampleState = {
-      label: 'MARKET UPDATE',
-      headline: 'Oil Is Pressuring Markets,\nBut Some Stocks\nStill Hold Strong',
-      body: '• Oil remains elevated and keeps pressure on broader risk assets.\n• Some leadership names are still holding trend and relative strength.\n• Traders should separate market weakness from stocks that are still acting well.',
-      source: 'Source: OQLIV',
-      date: 'March 2026',
-      theme: 'theme-red',
-      headlineSize: 'size-md',
-      branding: 'www.oqliv.com',
-      bodyMode: 'bullets'
     };
 
     function escapeHTML(str) {
@@ -626,11 +612,6 @@ Still Hold Strong</div>
 
     function renderBullets(text) {
       const lines = getLines(text);
-      if (!lines.length) {
-        els.bodyBullets.innerHTML = '';
-        return;
-      }
-
       els.bodyBullets.innerHTML = lines.map(line => {
         const clean = line.replace(/^•\s*/, '');
         return `
@@ -644,8 +625,8 @@ Still Hold Strong</div>
 
     function updatePoster() {
       const label = els.labelInput.value.trim() || 'MARKET UPDATE';
-      const headline = els.headlineInput.value.trim() || 'Your headline here';
-      const body = els.bodyInput.value.trim() || 'Your body text here';
+      const headline = els.headlineInput.value;
+      const body = els.bodyInput.value.trim();
       const source = els.sourceInput.value.trim() || 'Source: OQLIV';
       const date = els.dateInput.value.trim() || '';
       const theme = els.themeSelect.value;
@@ -663,27 +644,31 @@ Still Hold Strong</div>
       els.poster.className = `poster ${theme}`;
       els.headline.className = `headline ${headlineSize}`;
 
+      if (!body) {
+        els.bodyWrap.style.display = 'none';
+        els.bodyParagraph.textContent = '';
+        els.bodyBullets.innerHTML = '';
+        return;
+      }
+
+      els.bodyWrap.style.display = 'flex';
+
       if (bodyMode === 'paragraph') {
         els.bodyParagraph.style.display = 'block';
         els.bodyBullets.style.display = 'none';
         els.bodyParagraph.textContent = body;
+        els.bodyBullets.innerHTML = '';
       } else {
         els.bodyParagraph.style.display = 'none';
         els.bodyBullets.style.display = 'block';
+        els.bodyParagraph.textContent = '';
         renderBullets(body);
       }
     }
 
-    function resetSample() {
-      els.labelInput.value = sampleState.label;
-      els.headlineInput.value = sampleState.headline;
-      els.bodyInput.value = sampleState.body;
-      els.sourceInput.value = sampleState.source;
-      els.dateInput.value = sampleState.date;
-      els.themeSelect.value = sampleState.theme;
-      els.headlineSizeSelect.value = sampleState.headlineSize;
-      els.brandingInput.value = sampleState.branding;
-      els.bodyModeSelect.value = sampleState.bodyMode;
+    function clearHeadlineAndBody() {
+      els.headlineInput.value = '';
+      els.bodyInput.value = '';
       updatePoster();
     }
 
@@ -730,7 +715,7 @@ Still Hold Strong</div>
     });
 
     els.downloadBtn.addEventListener('click', downloadPoster);
-    els.resetBtn.addEventListener('click', resetSample);
+    els.clearBtn.addEventListener('click', clearHeadlineAndBody);
 
     updatePoster();
   </script>

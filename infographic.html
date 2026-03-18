@@ -4,7 +4,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>OQLIV Infographic Maker</title>
-
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
@@ -20,7 +19,6 @@
       --muted-2: #666;
       --accent: #ff6b35;
       --accent-2: #ff8c42;
-      --radius: 18px;
     }
 
     body{
@@ -35,7 +33,7 @@
     }
 
     .app{
-      max-width: 1400px;
+      max-width: 1320px;
       margin: 0 auto;
       display: grid;
       grid-template-columns: 420px 1fr;
@@ -62,7 +60,7 @@
     }
 
     .panel .sub{
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       color: var(--muted);
       margin-bottom: 18px;
       line-height: 1.5;
@@ -82,27 +80,27 @@
       font-weight: 700;
     }
 
-    input[type="text"],
     textarea,
+    input[type="text"],
     select{
       width: 100%;
       background: var(--panel-2);
       border: 1px solid var(--border);
       color: var(--text);
       border-radius: 14px;
-      padding: 12px 14px;
+      padding: 14px;
       font: inherit;
       outline: none;
     }
 
     textarea{
-      min-height: 120px;
+      min-height: 240px;
       resize: vertical;
       line-height: 1.5;
     }
 
-    input[type="text"]:focus,
     textarea:focus,
+    input[type="text"]:focus,
     select:focus{
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(255,107,53,0.12);
@@ -136,7 +134,9 @@
       color: #0a0a0a;
     }
 
-    .btn-primary:hover{ background: var(--accent-2); }
+    .btn-primary:hover{
+      background: var(--accent-2);
+    }
 
     .btn-secondary{
       background: transparent;
@@ -153,15 +153,14 @@
     .hint{
       margin-top: 12px;
       color: var(--muted-2);
-      font-size: 0.78rem;
-      line-height: 1.45;
+      font-size: 0.8rem;
+      line-height: 1.5;
     }
 
     .stage-wrap{
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      min-width: 0;
     }
 
     .phone-frame{
@@ -271,12 +270,8 @@
       margin-top: 8px;
       white-space: pre-line;
       text-wrap: balance;
+      font-size: 3.1rem;
     }
-
-    .headline.size-sm{ font-size: 2.25rem; }
-    .headline.size-md{ font-size: 2.75rem; }
-    .headline.size-lg{ font-size: 3.3rem; }
-    .headline.size-xl{ font-size: 4rem; }
 
     .accent-bar{
       width: 86px;
@@ -297,7 +292,7 @@
     }
 
     .body{
-      font-size: 1.14rem;
+      font-size: 1.12rem;
       line-height: 1.5;
       color: #d6d6d6;
       white-space: pre-line;
@@ -324,7 +319,7 @@
     .bullet-text{
       flex: 1;
       color: #d6d6d6;
-      font-size: 1.08rem;
+      font-size: 1.06rem;
       line-height: 1.45;
     }
 
@@ -379,45 +374,6 @@
       z-index: 3;
     }
 
-    .theme-red .badge,
-    .theme-red .bullet-mark,
-    .theme-red .dot{
-      background: #ff6b35;
-    }
-    .theme-red .accent-bar{
-      background: linear-gradient(90deg, #ff6b35, #ff8c42);
-    }
-
-    .theme-green .badge,
-    .theme-green .bullet-mark,
-    .theme-green .dot{
-      background: #2de07a;
-      box-shadow: 0 0 14px rgba(45,224,122,0.55);
-    }
-    .theme-green .accent-bar{
-      background: linear-gradient(90deg, #2de07a, #84f2b0);
-      box-shadow: 0 0 25px rgba(45,224,122,0.18);
-    }
-    .theme-green .badge{
-      background: rgba(45,224,122,0.1);
-      border-color: rgba(45,224,122,0.18);
-    }
-
-    .theme-blue .badge,
-    .theme-blue .bullet-mark,
-    .theme-blue .dot{
-      background: #4ea1ff;
-      box-shadow: 0 0 14px rgba(78,161,255,0.55);
-    }
-    .theme-blue .accent-bar{
-      background: linear-gradient(90deg, #4ea1ff, #8bc2ff);
-      box-shadow: 0 0 25px rgba(78,161,255,0.18);
-    }
-    .theme-blue .badge{
-      background: rgba(78,161,255,0.1);
-      border-color: rgba(78,161,255,0.18);
-    }
-
     @media (max-width: 1150px){
       .app{
         grid-template-columns: 1fr;
@@ -439,64 +395,21 @@
   <div class="app">
     <aside class="panel">
       <h1>OQLIV Infographic Maker</h1>
-      <p class="sub">9:16 editor for IG Reels and TikTok. Change the text, theme, label, source, and export it as PNG.</p>
+      <p class="sub">Just paste once. First line becomes headline. The rest becomes body.</p>
 
       <div class="field">
-        <label for="labelInput">Top label</label>
-        <input id="labelInput" type="text" value="MARKET UPDATE" />
-      </div>
+        <label for="contentInput">Paste content</label>
+        <textarea id="contentInput">Oil Is Pressuring Markets
 
-      <div class="field">
-        <label for="headlineInput">Headline</label>
-        <textarea id="headlineInput">Oil Is Pressuring Markets,
-But Some Stocks
-Still Hold Strong</textarea>
-      </div>
-
-      <div class="field">
-        <label for="bodyInput">Body text</label>
-        <textarea id="bodyInput">• Oil remains elevated and keeps pressure on broader risk assets.
-• Some leadership names are still holding trend and relative strength.
-• Traders should separate market weakness from stocks that are still acting well.</textarea>
+Oil remains elevated and keeps pressure on broader risk assets.
+Some leadership names are still holding trend and relative strength.
+Traders should separate market weakness from stocks that are still acting well.</textarea>
       </div>
 
       <div class="grid-2">
         <div class="field">
-          <label for="sourceInput">Source / note</label>
-          <input id="sourceInput" type="text" value="Source: OQLIV" />
-        </div>
-
-        <div class="field">
-          <label for="dateInput">Date / tag</label>
-          <input id="dateInput" type="text" value="March 2026" />
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="field">
-          <label for="themeSelect">Theme</label>
-          <select id="themeSelect">
-            <option value="theme-red">Orange</option>
-            <option value="theme-green">Green</option>
-            <option value="theme-blue">Blue</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="headlineSizeSelect">Headline size</label>
-          <select id="headlineSizeSelect">
-            <option value="size-sm">Small</option>
-            <option value="size-md" selected>Medium</option>
-            <option value="size-lg">Large</option>
-            <option value="size-xl">XL</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="field">
-          <label for="brandingInput">Branding</label>
-          <input id="brandingInput" type="text" value="www.oqliv.com" />
+          <label for="labelInput">Top label</label>
+          <input id="labelInput" type="text" value="MARKET UPDATE" />
         </div>
 
         <div class="field">
@@ -508,39 +421,60 @@ Still Hold Strong</textarea>
         </div>
       </div>
 
+      <div class="grid-2">
+        <div class="field">
+          <label for="sourceInput">Source</label>
+          <input id="sourceInput" type="text" value="Source: OQLIV" />
+        </div>
+
+        <div class="field">
+          <label for="dateInput">Date</label>
+          <input id="dateInput" type="text" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="brandingInput">Branding</label>
+        <input id="brandingInput" type="text" value="www.oqliv.com" />
+      </div>
+
       <div class="row">
         <button class="btn btn-primary" id="downloadBtn">Download PNG</button>
         <button class="btn btn-secondary" id="clearBtn">Clear</button>
       </div>
 
       <div class="hint">
-        Use line breaks in headline and body. For bullets, start each line with "•" or just put one point per line.
+        Example:
+        <br><br>
+        Line 1 = headline
+        <br>
+        Line 2 and below = body
+        <br><br>
+        Leave only one line if you want headline only.
       </div>
     </aside>
 
     <div class="stage-wrap">
       <div class="phone-frame">
-        <div id="poster" class="poster theme-red">
+        <div id="poster" class="poster">
           <div class="noise"></div>
           <div class="glow-line"></div>
           <div class="glow-line two"></div>
 
           <div class="poster-inner">
             <div class="topbar">
-              <div id="badge" class="badge">
+              <div class="badge">
                 <span class="dot"></span>
                 <span id="badgeText">MARKET UPDATE</span>
               </div>
 
               <div class="source">
                 <div id="sourceText">Source: OQLIV</div>
-                <div id="dateText">March 2026</div>
+                <div id="dateText"></div>
               </div>
             </div>
 
-            <div id="headline" class="headline size-md">Oil Is Pressuring Markets,
-But Some Stocks
-Still Hold Strong</div>
+            <div id="headline" class="headline">Oil Is Pressuring Markets</div>
 
             <div class="accent-bar"></div>
 
@@ -556,8 +490,8 @@ Still Hold Strong</div>
               </div>
 
               <div class="corner-tag">
-                <!-- Vertical infographic<br />
-                Reel / TikTok format -->
+                Vertical infographic<br />
+                Reel / TikTok format
               </div>
             </div>
           </div>
@@ -569,30 +503,40 @@ Still Hold Strong</div>
   </div>
 
   <script>
+    function getTodayLabel() {
+      const now = new Date();
+      return now.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
     const els = {
+      contentInput: document.getElementById('contentInput'),
       labelInput: document.getElementById('labelInput'),
-      headlineInput: document.getElementById('headlineInput'),
-      bodyInput: document.getElementById('bodyInput'),
+      bodyModeSelect: document.getElementById('bodyModeSelect'),
       sourceInput: document.getElementById('sourceInput'),
       dateInput: document.getElementById('dateInput'),
-      themeSelect: document.getElementById('themeSelect'),
-      headlineSizeSelect: document.getElementById('headlineSizeSelect'),
       brandingInput: document.getElementById('brandingInput'),
-      bodyModeSelect: document.getElementById('bodyModeSelect'),
       downloadBtn: document.getElementById('downloadBtn'),
       clearBtn: document.getElementById('clearBtn'),
 
-      poster: document.getElementById('poster'),
       badgeText: document.getElementById('badgeText'),
-      headline: document.getElementById('headline'),
       sourceText: document.getElementById('sourceText'),
       dateText: document.getElementById('dateText'),
+      headline: document.getElementById('headline'),
       bodyWrap: document.getElementById('bodyWrap'),
       bodyParagraph: document.getElementById('bodyParagraph'),
       bodyBullets: document.getElementById('bodyBullets'),
       brandUrl: document.getElementById('brandUrl'),
-      watermark: document.getElementById('watermark')
+      watermark: document.getElementById('watermark'),
+      poster: document.getElementById('poster')
     };
+
+    if (!els.dateInput.value.trim()) {
+      els.dateInput.value = getTodayLabel();
+    }
 
     function escapeHTML(str) {
       return String(str)
@@ -603,15 +547,23 @@ Still Hold Strong</div>
         .replaceAll("'", '&#039;');
     }
 
-    function getLines(text) {
-      return String(text)
-        .split('\n')
-        .map(line => line.trim())
-        .filter(Boolean);
+    function parseContent(raw) {
+      const lines = String(raw).split('\n');
+      const trimmed = lines.map(line => line.trim());
+
+      while (trimmed.length && trimmed[0] === '') trimmed.shift();
+      while (trimmed.length && trimmed[trimmed.length - 1] === '') trimmed.pop();
+
+      if (!trimmed.length) {
+        return { headline: '', bodyLines: [] };
+      }
+
+      const headline = trimmed[0];
+      const bodyLines = trimmed.slice(1).filter(line => line !== '');
+      return { headline, bodyLines };
     }
 
-    function renderBullets(text) {
-      const lines = getLines(text);
+    function renderBullets(lines) {
       els.bodyBullets.innerHTML = lines.map(line => {
         const clean = line.replace(/^•\s*/, '');
         return `
@@ -624,51 +576,41 @@ Still Hold Strong</div>
     }
 
     function updatePoster() {
-      const label = els.labelInput.value.trim() || 'MARKET UPDATE';
-      const headline = els.headlineInput.value;
-      const body = els.bodyInput.value.trim();
-      const source = els.sourceInput.value.trim() || 'Source: OQLIV';
-      const date = els.dateInput.value.trim() || '';
-      const theme = els.themeSelect.value;
-      const headlineSize = els.headlineSizeSelect.value;
-      const branding = els.brandingInput.value.trim() || 'www.oqliv.com';
+      const parsed = parseContent(els.contentInput.value);
+      const headline = parsed.headline || '';
+      const bodyLines = parsed.bodyLines || [];
       const bodyMode = els.bodyModeSelect.value;
 
-      els.badgeText.textContent = label;
+      els.badgeText.textContent = els.labelInput.value.trim() || 'MARKET UPDATE';
+      els.sourceText.textContent = els.sourceInput.value.trim() || 'Source: OQLIV';
+      els.dateText.textContent = els.dateInput.value.trim() || getTodayLabel();
+      els.brandUrl.textContent = els.brandingInput.value.trim() || 'www.oqliv.com';
+      els.watermark.textContent = els.brandingInput.value.trim() || 'www.oqliv.com';
       els.headline.textContent = headline;
-      els.sourceText.textContent = source;
-      els.dateText.textContent = date;
-      els.brandUrl.textContent = branding;
-      els.watermark.textContent = branding;
 
-      els.poster.className = `poster ${theme}`;
-      els.headline.className = `headline ${headlineSize}`;
-
-      if (!body) {
+      if (!bodyLines.length) {
         els.bodyWrap.style.display = 'none';
         els.bodyParagraph.textContent = '';
         els.bodyBullets.innerHTML = '';
-        return;
-      }
-
-      els.bodyWrap.style.display = 'flex';
-
-      if (bodyMode === 'paragraph') {
-        els.bodyParagraph.style.display = 'block';
-        els.bodyBullets.style.display = 'none';
-        els.bodyParagraph.textContent = body;
-        els.bodyBullets.innerHTML = '';
       } else {
-        els.bodyParagraph.style.display = 'none';
-        els.bodyBullets.style.display = 'block';
-        els.bodyParagraph.textContent = '';
-        renderBullets(body);
+        els.bodyWrap.style.display = 'flex';
+
+        if (bodyMode === 'paragraph') {
+          els.bodyParagraph.style.display = 'block';
+          els.bodyBullets.style.display = 'none';
+          els.bodyParagraph.textContent = bodyLines.join('\n');
+          els.bodyBullets.innerHTML = '';
+        } else {
+          els.bodyParagraph.style.display = 'none';
+          els.bodyBullets.style.display = 'block';
+          els.bodyParagraph.textContent = '';
+          renderBullets(bodyLines);
+        }
       }
     }
 
-    function clearHeadlineAndBody() {
-      els.headlineInput.value = '';
-      els.bodyInput.value = '';
+    function clearContent() {
+      els.contentInput.value = '';
       updatePoster();
     }
 
@@ -700,22 +642,19 @@ Still Hold Strong</div>
     }
 
     [
+      els.contentInput,
       els.labelInput,
-      els.headlineInput,
-      els.bodyInput,
+      els.bodyModeSelect,
       els.sourceInput,
       els.dateInput,
-      els.themeSelect,
-      els.headlineSizeSelect,
-      els.brandingInput,
-      els.bodyModeSelect
+      els.brandingInput
     ].forEach(el => {
       el.addEventListener('input', updatePoster);
       el.addEventListener('change', updatePoster);
     });
 
     els.downloadBtn.addEventListener('click', downloadPoster);
-    els.clearBtn.addEventListener('click', clearHeadlineAndBody);
+    els.clearBtn.addEventListener('click', clearContent);
 
     updatePoster();
   </script>

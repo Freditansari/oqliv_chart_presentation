@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OQLIV — U.S. Market Highlights</title>
+  <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0a0a0a;
+      --panel: #141414;
+      --panel-2: #101010;
+      --border: #212121;
+      --text: #e7e7e7;
+      --muted: #a0a0a0;
+      --muted-2: #707070;
+      --accent: #ff6b35;
+      --accent-2: #ff9b52;
+      --bull: #24d16f;
+      --bear: #ff4d4f;
+      --warn: #ffb020;
+      --chip: #1a1a1a;
+      --radius: 12px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      padding: 1.2rem;
+    }
+    .container { max-width: 1600px; margin: 0 auto; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.65rem 0 1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .brand { display: flex; align-items: center; gap: 0.8rem; font-weight: 700; letter-spacing: 0.02em; color: #fff; }
+    .brand-badge {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #111;
+      border-radius: 999px;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+    .topbar-right {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      text-align: right;
+    }
+    .hero, .section, .chart-card, .news-card, .highlight-card, .macro-card, .bullet-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .hero {
+      overflow: hidden;
+      margin-bottom: 1rem;
+      background: linear-gradient(180deg, rgba(255,107,53,0.08), transparent 40%), var(--panel);
+    }
+    .hero-inner {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 1rem;
+      padding: 1.15rem;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 30px;
+      padding: 0.32rem 0.65rem;
+      border-radius: 999px;
+      background: rgba(255,107,53,0.12);
+      border: 1px solid rgba(255,107,53,0.2);
+      color: var(--accent-2);
+      font-size: 0.76rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+    }
+    .hero h1 {
+      font-size: 2rem;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.7rem;
+      color: #fff;
+      max-width: 920px;
+    }
+    .hero p { color: var(--muted); font-size: 0.97rem; max-width: 920px; }
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .stat {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.9rem;
+      min-height: 92px;
+    }
+    .stat-label {
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.35rem;
+    }
+    .stat-value { font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1.1; }
+    .stat-value.bull { color: var(--bull); }
+    .stat-value.bear { color: var(--bear); }
+    .stat-value.warn { color: var(--warn); }
+    .stat-note { color: var(--muted-2); font-size: 0.76rem; margin-top: 0.35rem; }
+    .bullet-card {
+      background: var(--panel-2);
+      padding: 1rem;
+      height: 100%;
+    }
+    .bullet-card h3 { font-size: 0.95rem; margin-bottom: 0.6rem; }
+    .bullet-list { list-style: none; display: grid; gap: 0.55rem; }
+    .bullet-list li {
+      color: var(--text);
+      font-size: 0.88rem;
+      padding-left: 1rem;
+      position: relative;
+    }
+    .bullet-list li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--accent-2);
+      font-weight: 900;
+    }
+    .macro-grid, .news-grid, .chart-grid, .bullet-grid {
+      display: grid;
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .macro-grid, .chart-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .news-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .bullet-grid { grid-template-columns: 1.1fr 0.9fr; }
+    .section { margin-bottom: 1rem; }
+    .section-header, .chart-header {
+      padding: 0.95rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .section-header h2, .chart-header h3 { font-size: 1rem; color: #fff; font-weight: 700; }
+    .section-sub, .chart-desc { color: var(--muted); font-size: 0.8rem; margin-top: 0.15rem; }
+    .headline-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.8rem;
+      padding: 1rem;
+    }
+    .highlight-card, .news-card, .macro-card { padding: 1rem; background: var(--panel-2); }
+    .highlight-card small, .news-kicker, .macro-kicker {
+      display: block;
+      color: var(--accent-2);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      margin-bottom: 0.35rem;
+    }
+    .highlight-card strong {
+      display: block;
+      font-size: 1.05rem;
+      line-height: 1.2;
+      color: #fff;
+      margin-bottom: 0.45rem;
+    }
+    .highlight-card p, .news-card p, .macro-card p { color: var(--muted); font-size: 0.84rem; }
+    .news-card h3 { font-size: 0.95rem; margin-bottom: 0.45rem; color: #fff; line-height: 1.35; }
+    .macro-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 0.6rem; }
+    .macro-value { font-size: 1.1rem; font-weight: 800; }
+    .macro-value.bull { color: var(--bull); }
+    .macro-value.bear { color: var(--bear); }
+    .macro-value.warn { color: var(--warn); }
+    .macro-pane { height: 220px; }
+    .chart-card { overflow: hidden; position: relative; background: var(--panel-2); }
+    .chart-meta {
+      text-align: right;
+      color: var(--muted-2);
+      font-size: 0.72rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .chip-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0 1rem 0.8rem;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0.28rem 0.58rem;
+      border-radius: 999px;
+      background: #171717;
+      border: 1px solid var(--border);
+      font-size: 0.7rem;
+      color: var(--text);
+      font-weight: 700;
+    }
+    .chip.bull { color: var(--bull); }
+    .chip.bear { color: var(--bear); }
+    .chip.warn { color: var(--warn); }
+    .price-pane { height: 300px; }
+    .vol-pane { height: 84px; border-top: 1px solid var(--border); }
+    .watermark { position: absolute; left: 14px; top: 94px; z-index: 8; pointer-events: none; user-select: none; }
+    .watermark strong { display: block; font-size: 22px; color: rgba(170,170,170,0.34); letter-spacing: 0.05em; }
+    .watermark span {
+      display: block;
+      font-size: 10px;
+      color: rgba(170,170,170,0.28);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      letter-spacing: 0.08em;
+    }
+    .tab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      padding: 1rem 1rem 0;
+    }
+    .tab-btn {
+      background: #161616;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0.5rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: rgba(255,107,53,0.12);
+      border-color: rgba(255,107,53,0.25);
+      color: var(--accent-2);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .footer-note { color: var(--muted); font-size: 0.8rem; padding: 0.95rem 0.1rem 0; }
+    code { color: #fff; }
+    @media (max-width: 1280px) {
+      .hero-inner, .bullet-grid { grid-template-columns: 1fr; }
+      .macro-grid, .news-grid, .chart-grid { grid-template-columns: 1fr; }
+      .headline-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      body { padding: 0.9rem; }
+      .hero h1 { font-size: 1.65rem; }
+      .headline-strip, .hero-stats { grid-template-columns: 1fr; }
+      .topbar, .section-header, .chart-header { flex-direction: column; align-items: flex-start; }
+      .chart-meta, .topbar-right { text-align: left; }
+      .watermark { top: 88px; left: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <span class="brand-badge">OQLIV BRIEF</span>
+        <span>www.oqliv.com</span>
+      </div>
+      <div class="topbar-right">
+        <div id="asOfLine">Loading charts...</div>
+        <div>www.oqliv.com</div>
+      </div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-inner">
+        <div>
+          <div class="eyebrow">MARKET HIGHLIGHTS</div>
+  
+        </div>
+        
+        <div class="bullet-card">
+          <h3>What is affecting the stock market today</h3>
+          <ul class="bullet-list">
+            <li>Oil jumps above $115/bbl after attacks on Middle East energy assets multiply.</li>
+            <li>Stocks slump on worsening war in the Middle East as oil spikes and the dollar firms.</li>
+            <li>Investors face a cloudier Fed rate outlook as Iran war pressures inflation and yields.</li>
+            <li>Morgan Stanley joins peers in pushing back Fed cut forecasts on inflation fears.</li>
+            <li>Oil shock from the Middle East war pushes investors to shun Asian currencies.</li>
+            <li>Gold falls to a one-month low on a firm dollar and hawkish Fed backdrop.</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2>Macro read</h2>
+          
+        </div>
+      </div>
+      <div class="macro-grid" id="macroGrid"></div>
+    </section>
+
+   
+
+    <section class="section">
+      <div class="section-header">
+        <div>
+          <h2>Stock categories</h2>
+          <div class="section-sub">Charts are now grouped into tabs by setup style</div>
+        </div>
+      </div>
+      <div class="tab-bar" id="tabBar"></div>
+      <div id="tabPanels"></div>
+    </section>
+
+    <div class="footer-note">
+      This page is based on your uploaded OQLIV HTML structure and keeps using your chart style while adding a macro header and tabbed stock sections.
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://oqliv.com';
+    const MACRO = [
+      {
+        symbol: '^TNX',
+        title: 'U.S. 10Y Yield',
+        key: '10Y',
+        description: 'Higher yield usually pressures duration-heavy growth and lifts the hurdle rate.',
+        statusLabel: 'Yield pressure',
+        statusTone: 'warn'
+      },
+      {
+        symbol: '^VIX',
+        title: 'VIX',
+        key: 'VIX',
+        description: 'Elevated volatility means traders still want downside protection.',
+        statusLabel: 'Risk premium up',
+        statusTone: 'bear'
+      },
+      {
+        symbol: 'DX-Y.NYB',
+        title: 'DXY',
+        key: 'DXY',
+        description: 'A firmer dollar tightens conditions and can weigh on global risk appetite.',
+        statusLabel: 'Dollar firm',
+        statusTone: 'warn'
+      }
+    ];
+
+    const TABS = [
+      {
+        id: 'momentum',
+        label: 'Normal momentum',
+        cards: [
+          { symbol: 'XOM', title: 'XOM', desc: 'Energy leader still backed by the macro tape.', chips: ['Energy leader', 'Regime fit', 'Still trending'], metaNote: 'Cleaner than broad beta' },
+          { symbol: 'CVX', title: 'CVX', desc: 'Large-cap energy with a steadier profile than the hot refiners.', chips: ['Quality energy', 'Trend intact', 'Macro fit'], metaNote: 'Safer momentum profile' },
+          { symbol: 'LHX', title: 'LHX', desc: 'Defense trend still fits the geopolitical backdrop.', chips: ['Defense', 'Quality trend', 'Still working'], metaNote: 'Good slope, less hype' },
+          { symbol: 'EQIX', title: 'EQIX', desc: 'Quiet quality trend holding up better than broad tech.', chips: ['Quality', 'Stable slope', 'Defensive growth'], metaNote: 'Cleaner than software' }
+        ]
+      },
+      {
+        id: 'aggressive',
+        label: 'Aggressive momentum',
+        cards: [
+          { symbol: 'MU', title: 'MU', desc: 'Memory strength still beats broad semi leadership.', chips: ['Memory strength', 'Momentum', 'Extended risk'], metaNote: 'Strong but can snap back' },
+          { symbol: 'WDC', title: 'WDC', desc: 'Storage trend still strong with a usable chart structure.', chips: ['Storage leader', 'Trend intact', 'Momentum'], metaNote: 'One of the cleaner aggressive names' },
+          { symbol: 'SNDK', title: 'SNDK', desc: 'Monster relative strength, but this one is hot.', chips: ['Very strong', 'Overextended risk', 'Do not chase'], metaNote: 'Leader with chase risk' },
+          { symbol: 'CIEN', title: 'CIEN', desc: 'Optical/network momentum still alive, but less forgiving.', chips: ['Aggressive', 'Strong slope', 'Hot chart'], metaNote: 'Momentum trader only' }
+        ]
+      },
+      {
+        id: 'safe',
+        label: 'Safe / defensive',
+        cards: [
+          { symbol: 'XLU', title: 'XLU', desc: 'Utilities still work when the market wants survival over excitement.', chips: ['Defensive bid', 'Lower beta', 'Safer profile'], metaNote: 'Useful in a fragile tape' },
+          { symbol: 'WMT', title: 'WMT', desc: 'Defensive quality with a steadier chart than broad indexes.', chips: ['Defensive', 'Stable trend', 'Quality'], metaNote: 'Not flashy, still healthy' },
+          { symbol: 'VZ', title: 'VZ', desc: 'Another defensive chart that can hold up when beta gets hit.', chips: ['Defensive', 'Yield angle', 'Lower beta'], metaNote: 'A calmer setup' },
+          { symbol: 'XOM', title: 'XOM', desc: 'Energy can still be a defensive macro hedge in this exact regime.', chips: ['Macro hedge', 'Energy', 'Still strong'], metaNote: 'Safer than chasing broken growth' }
+        ]
+      },
+      {
+        id: 'broken',
+        label: 'Broken leadership',
+        cards: [
+          { symbol: 'QQQ', title: 'QQQ', desc: 'Broad tech still needs proof before leadership status comes back.', chips: ['Chart warning', 'Needs reclaim', 'Not leading'], metaNote: 'Bounce is not enough' },
+          { symbol: 'TSM', title: 'TSM', desc: 'Great company, mixed structure. Not a top leader here.', chips: ['Mixed structure', 'Below key MAs', 'Watchlist'], metaNote: 'Recovery candidate, not leadership' },
+          { symbol: 'NVDA', title: 'NVDA', desc: 'Damaged leader until the chart rebuilds properly.', chips: ['Damaged leader', 'Needs structure', 'Watchlist'], metaNote: 'Story strong, chart less clean' },
+          { symbol: 'MSFT', title: 'MSFT', desc: 'Quality name, but the price action is not leading right now.', chips: ['Broken slope', 'Below trend', 'Wait for proof'], metaNote: 'Do not force a hero trade' }
+        ]
+      },
+      {
+        id: 'dipbuy',
+        label: 'Dip buy watch',
+        cards: [
+          { symbol: 'ASML', title: 'ASML', desc: 'Long-term quality still there. Better candidate on a cleaner dip.', chips: ['Quality', 'Dip watch', 'Long-term intact'], metaNote: 'Needs better setup than broad tech' },
+          { symbol: 'AMAT', title: 'AMAT', desc: 'Still a more respectable dip candidate than broken software.', chips: ['Semi equipment', 'Dip watch', 'Quality'], metaNote: 'Watch for support reclaim' },
+          { symbol: 'LMT', title: 'LMT', desc: 'Defense dip that still fits the current geopolitical tape.', chips: ['Defense', 'Dip watch', 'Safer setup'], metaNote: 'Good if tensions stay high' },
+          { symbol: 'NOC', title: 'NOC', desc: 'Another defense name worth watching if the pullback stabilizes.', chips: ['Defense', 'Watchlist', 'Quality'], metaNote: 'Prefer on base, not random bounce' }
+        ]
+      }
+    ];
+
+    function $(id) { return document.getElementById(id); }
+    function num(x) { const n = Number(x); return Number.isFinite(n) ? n : NaN; }
+    function fmtPrice(x) {
+      const n = num(x);
+      return Number.isFinite(n) ? n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : '—';
+    }
+    function fmtPct(x, d = 2) {
+      const n = num(x);
+      return Number.isFinite(n) ? `${n >= 0 ? '+' : ''}${n.toFixed(d)}%` : '—';
+    }
+    function toUTCTimestamp(v) {
+      const d = v instanceof Date ? v : new Date(v);
+      const t = Math.floor(d.getTime() / 1000);
+      return Number.isFinite(t) ? t : NaN;
+    }
+    function buildPatternScanUrl(ticker, tf = 'd') {
+      const t = encodeURIComponent((ticker || '').trim().toUpperCase());
+      if (tf === 'd') {
+        return `${API_BASE}/performance/api/json/pattern-scan?ticker=${t}&period=1y&interval=1d`;
+      }
+      return `${API_BASE}/performance/api/json/pattern-scan?ticker=${t}&period=15y&interval=1mo`;
+    }
+    // Mirrors trend-report.html exactly. Macro and stock charts both use the same pattern-scan endpoint.
+    async function fetchJSON(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      const txt = await res.text();
+      let data;
+      try { data = JSON.parse(txt); } catch { throw new Error(`Bad JSON from ${url}`); }
+      if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+      return data;
+    }
+    function parseCandles(payload) {
+      const arr = payload?.candles || payload?.ohlc || payload?.bars || [];
+      return (arr || []).map(x => {
+        const time = toUTCTimestamp(x.t || x.time || x.date);
+        const open = num(x.o ?? x.open);
+        const high = num(x.h ?? x.high);
+        const low = num(x.l ?? x.low);
+        const close = num(x.c ?? x.close);
+        const volume = num(x.v ?? x.volume);
+        if (![time, open, high, low, close].every(Number.isFinite)) return null;
+        return { time, open, high, low, close, volume: Number.isFinite(volume) ? volume : null };
+      }).filter(Boolean);
+    }
+    function parseMacroSeries(payload) {
+      const candles = parseCandles(payload);
+      return candles.map(c => ({ time: c.time, value: c.close })).filter(p => Number.isFinite(p.time) && Number.isFinite(p.value));
+    }
+    function buildVolumeBars(candles) {
+      return candles.filter(c => c.volume != null).map(c => ({
+        time: c.time,
+        value: c.volume,
+        color: c.close >= c.open ? 'rgba(36,209,111,0.38)' : 'rgba(255,77,79,0.35)'
+      }));
+    }
+    function mapTimeValueSeries(rawSeries, candles) {
+      if (!Array.isArray(rawSeries) || !rawSeries.length) return [];
+      if (typeof rawSeries[0] === 'object') {
+        return rawSeries.map(p => {
+          const time = toUTCTimestamp(p.time ?? p.t ?? p.date);
+          const value = num(p.value ?? p.y ?? p.price);
+          if (!Number.isFinite(time) || !Number.isFinite(value)) return null;
+          return { time, value };
+        }).filter(Boolean);
+      }
+      const vals = rawSeries.map(num).filter(Number.isFinite);
+      const len = Math.min(vals.length, candles.length);
+      const cs = candles.slice(candles.length - len);
+      const vs = vals.slice(vals.length - len);
+      return vs.map((value, i) => ({ time: cs[i].time, value }));
+    }
+    const chartRegistry = [];
+    function refreshAllCharts() {
+      chartRegistry.forEach(item => {
+        const { chart, volChart, el, priceEl, volEl } = item || {};
+        if (chart && el) {
+          const w = el.clientWidth || el.getBoundingClientRect().width || 0;
+          const h = el.clientHeight || el.getBoundingClientRect().height || 220;
+          if (w > 0 && h > 0) chart.resize(Math.round(w), Math.round(h));
+          try { chart.timeScale().fitContent(); } catch (_) {}
+        }
+        if (chart && volChart && priceEl && volEl) {
+          const pw = priceEl.clientWidth || priceEl.getBoundingClientRect().width || 0;
+          const ph = priceEl.clientHeight || priceEl.getBoundingClientRect().height || 300;
+          const vw = volEl.clientWidth || volEl.getBoundingClientRect().width || 0;
+          const vh = volEl.clientHeight || volEl.getBoundingClientRect().height || 84;
+          if (pw > 0 && ph > 0) chart.resize(Math.round(pw), Math.round(ph));
+          if (vw > 0 && vh > 0) volChart.resize(Math.round(vw), Math.round(vh));
+          try { chart.timeScale().fitContent(); } catch (_) {}
+          try { volChart.timeScale().fitContent(); } catch (_) {}
+        }
+      });
+    }
+    function createMiniLineChart(el) {
+      const chart = LightweightCharts.createChart(el, {
+        width: el.clientWidth,
+        height: el.clientHeight,
+        layout: { background: { type: 'solid', color: '#101010' }, textColor: '#e7e7e7' },
+        grid: { vertLines: { color: '#1f1f1f' }, horzLines: { color: '#1f1f1f' } },
+        rightPriceScale: { borderColor: '#1f1f1f' },
+        timeScale: { borderColor: '#1f1f1f', timeVisible: true },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+      });
+      const series = chart.addLineSeries({ lineWidth: 2, color: '#ff9b52', priceLineVisible: false, crosshairMarkerVisible: false });
+      chartRegistry.push({ chart, el });
+      return { chart, series };
+    }
+    function createCharts(priceEl, volEl) {
+      const chart = LightweightCharts.createChart(priceEl, {
+        width: priceEl.clientWidth,
+        height: priceEl.clientHeight,
+        layout: { background: { type: 'solid', color: '#101010' }, textColor: '#e7e7e7' },
+        grid: { vertLines: { color: '#1f1f1f' }, horzLines: { color: '#1f1f1f' } },
+        rightPriceScale: { borderColor: '#1f1f1f' },
+        timeScale: { borderColor: '#1f1f1f', timeVisible: true },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+      });
+      const volChart = LightweightCharts.createChart(volEl, {
+        width: volEl.clientWidth,
+        height: volEl.clientHeight,
+        layout: { background: { type: 'solid', color: '#101010' }, textColor: 'rgba(0,0,0,0)' },
+        grid: { vertLines: { color: '#1f1f1f' }, horzLines: { color: '#1f1f1f' } },
+        rightPriceScale: { borderColor: '#1f1f1f' },
+        timeScale: { borderColor: '#1f1f1f', timeVisible: true }
+      });
+      volChart.priceScale('right').applyOptions({ visible: false });
+      const candleSeries = chart.addCandlestickSeries({
+        upColor: '#24d16f', downColor: '#ff4d4f', borderUpColor: '#24d16f', borderDownColor: '#ff4d4f', wickUpColor: '#24d16f', wickDownColor: '#ff4d4f'
+      });
+      const volSeries = volChart.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: '', scaleMargins: { top: 0.92, bottom: 0 } });
+      chart.timeScale().subscribeVisibleLogicalRangeChange(r => { if (r) volChart.timeScale().setVisibleLogicalRange(r); });
+      chartRegistry.push({ chart, volChart, priceEl, volEl });
+      return { chart, volChart, candleSeries, volSeries };
+    }
+    function addLine(chart, data, options) {
+      if (!data.length) return null;
+      const s = chart.addLineSeries({ crosshairMarkerVisible: false, priceLineVisible: false, lastValueVisible: false, ...options });
+      s.setData(data);
+      return s;
+    }
+    function tabButtonHTML(tab, active) {
+      return `<button class="tab-btn ${active ? 'active' : ''}" data-tab="${tab.id}">${tab.label}</button>`;
+    }
+    function chipClass(text) {
+      return /warning|watchlist|mixed|not leading|below|do not chase|overextended|damaged|broken/i.test(text)
+        ? 'bear'
+        : /leader|strength|trend|defensive|safer|fit|momentum|quality|intact/i.test(text)
+        ? 'bull'
+        : 'warn';
+    }
+    function panelHTML(tab, active) {
+      return `
+        <div class="tab-panel ${active ? 'active' : ''}" id="panel-${tab.id}">
+          <div class="chart-grid" id="grid-${tab.id}">
+            ${tab.cards.map((card, idx) => `
+              <article class="chart-card">
+                <div class="chart-header">
+                  <div>
+                    <h3>${card.title}</h3>
+                    <div class="chart-desc">${card.desc}</div>
+                  </div>
+                  <div class="chart-meta" id="meta-${tab.id}-${idx}">Loading...</div>
+                </div>
+                <div class="chip-line">
+                  ${(card.chips || []).map(ch => `<span class="chip ${chipClass(ch)}">${ch}</span>`).join('')}
+                </div>
+                <div class="watermark"><strong>${card.title}</strong><span>www.oqliv.com</span></div>
+                <div id="price-${tab.id}-${idx}" class="price-pane"></div>
+                <div id="vol-${tab.id}-${idx}" class="vol-pane"></div>
+              </article>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    function buildTabs() {
+      $('tabBar').innerHTML = TABS.map((tab, i) => tabButtonHTML(tab, i === 0)).join('');
+      $('tabPanels').innerHTML = TABS.map((tab, i) => panelHTML(tab, i === 0)).join('');
+      $('tabBar').addEventListener('click', (e) => {
+        const btn = e.target.closest('.tab-btn');
+        if (!btn) return;
+        const id = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(x => x.classList.toggle('active', x.dataset.tab === id));
+        document.querySelectorAll('.tab-panel').forEach(x => x.classList.toggle('active', x.id === `panel-${id}`));
+        requestAnimationFrame(() => requestAnimationFrame(refreshAllCharts));
+      });
+    }
+    function buildMacro() {
+      $('macroGrid').innerHTML = MACRO.map((m, idx) => `
+        <article class="macro-card">
+          <div class="macro-kicker">${m.key}</div>
+          <div class="macro-head">
+            <h3>${m.title}</h3>
+            <div class="macro-value ${m.statusTone}" id="macroValue-${idx}">Loading...</div>
+          </div>
+          <p>${m.description}</p>
+          <div class="macro-pane" id="macroPane-${idx}"></div>
+        </article>
+      `).join('');
+    }
+    async function loadMacroOne(item, idx) {
+      const payload = await fetchJSON(buildPatternScanUrl(item.symbol, 'd'));
+      const series = parseMacroSeries(payload);
+      if (!series.length) throw new Error(`No macro data for ${item.symbol}`);
+      const { chart, series: lineSeries } = createMiniLineChart($(`macroPane-${idx}`));
+      const first = series[0]?.value;
+      const last = series[series.length - 1]?.value;
+      const change = Number.isFinite(first) && Number.isFinite(last) && first !== 0 ? ((last / first) - 1) * 100 : NaN;
+      lineSeries.applyOptions({ color: change >= 0 ? '#ff9b52' : '#24d16f' });
+      lineSeries.setData(series);
+      chart.timeScale().fitContent();
+      $(`macroValue-${idx}`).textContent = `${fmtPrice(last)} | ${fmtPct(change)}`;
+      return payload?.asof || payload?.asof_utc || null;
+    }
+    async function loadStockCard(card, tabId, idx) {
+      const payload = await fetchJSON(buildPatternScanUrl(card.symbol, 'd'));
+      const candles = parseCandles(payload);
+      if (!candles.length) throw new Error(`No candles for ${card.symbol}`);
+      const lr = payload?.linear_regression || {};
+      const lineSeries = mapTimeValueSeries(lr?.line?.series || lr?.line?.points || [], candles);
+      const resistanceSeries = mapTimeValueSeries(lr?.resistance?.series || lr?.resistance?.points || [], candles);
+      const supportSeries = mapTimeValueSeries(lr?.support?.series || lr?.support?.points || [], candles);
+      const priceEl = $(`price-${tabId}-${idx}`);
+      const volEl = $(`vol-${tabId}-${idx}`);
+      const pack = createCharts(priceEl, volEl);
+      pack.candleSeries.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
+      pack.volSeries.setData(buildVolumeBars(candles));
+      addLine(pack.chart, lineSeries, { color: 'rgba(96,165,250,0.95)', lineWidth: 2 });
+      addLine(pack.chart, resistanceSeries, { color: 'rgba(255,176,32,0.9)', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed });
+      addLine(pack.chart, supportSeries, { color: 'rgba(36,209,111,0.9)', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed });
+      pack.chart.timeScale().fitContent();
+      pack.volChart.timeScale().fitContent();
+      const last = candles[candles.length - 1]?.close;
+      const last5 = candles[Math.max(0, candles.length - 6)]?.close;
+      const last126 = candles[Math.max(0, candles.length - 126)]?.close;
+      const perf5d = Number.isFinite(last) && Number.isFinite(last5) && last5 !== 0 ? ((last / last5) - 1) * 100 : NaN;
+      const perf6m = Number.isFinite(last) && Number.isFinite(last126) && last126 !== 0 ? ((last / last126) - 1) * 100 : NaN;
+      const slope = num(lr?.line?.slope);
+      const direction = slope > 0 ? 'up' : slope < 0 ? 'down' : 'flat';
+      $(`meta-${tabId}-${idx}`).innerHTML = `Price ${fmtPrice(last)}<br>5D ${fmtPct(perf5d)}<br>6M ${fmtPct(perf6m)}<br>Slope ${direction}`;
+      return payload?.asof || payload?.asof_utc || null;
+    }
+    async function init() {
+      buildMacro();
+      buildTabs();
+      const dates = [];
+      try {
+        await Promise.all(MACRO.map((item, idx) => loadMacroOne(item, idx).then(d => { if (d) dates.push(d); }).catch(err => {
+          console.error(err);
+          $(`macroValue-${idx}`).textContent = 'Unavailable';
+          $(`macroPane-${idx}`).innerHTML = '<div style="padding:1rem;color:#a0a0a0;font-size:0.85rem;">Macro data unavailable from OQLIV endpoint.</div>';
+        })));
+        await Promise.all(TABS.flatMap(tab => tab.cards.map((card, idx) => loadStockCard(card, tab.id, idx).then(d => { if (d) dates.push(d); }))));
+        requestAnimationFrame(() => requestAnimationFrame(refreshAllCharts));
+        $('asOfLine').textContent = dates.length ? `As of ${Array.from(new Set(dates)).sort().join(' | ')}` : 'Charts loaded';
+      } catch (e) {
+        console.error(e);
+        $('asOfLine').textContent = `Load error: ${e.message}`;
+      }
+    }
+    init();
+  </script>
+</body>
+</html>
